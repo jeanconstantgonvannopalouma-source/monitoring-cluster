@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mes Sites</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .btn { padding: 8px 12px; background: #007bff; color: white; border-radius: 4px; text-decoration: none; }
+        .btn:hover { background: #0056b3; }
+        input { padding: 8px; width: 300px; }
+    </style>
+</head>
+<body>
+
+<h1>Mes Sites</h1>
+
+<a href="/overview" class="btn">Retour au Dashboard</a>
+
+<h2>Ajouter un site</h2>
+<form method="post">
+    <input type="text" name="url" placeholder="https://example.com">
+    <button class="btn" type="submit">Ajouter</button>
+</form>
+
+<h2>Liste des sites surveillés</h2>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>URL</th>
+        <th>Ajouté le</th>
+    </tr>
+
+    {% for s in sites %}
+    <tr>
+        <td>{{ s.id }}</td>
+        <td>{{ s.url }}</td>
+        <td>{{ s.created_at }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

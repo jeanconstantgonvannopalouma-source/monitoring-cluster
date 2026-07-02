@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Graphiques en temps réel</h1>
+
+<div id="graph-latence" style="height:500px;"></div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+let data = {};
+
+const evtSource = new EventSource("/stream/latence");
+
+evtSource.onmessage = function(event) {
+    const points = JSON.parse(event.data);
+
+    points.forEach(p => {
+        if (!data[p.site]) {
+            data[p.site] = { x: [], y: [] };
+        }
+        data[p.site].x.push(p.timestamp);
+        data[p.site].y.push(p.latency);
+    });
+
+    const traces = Object.keys(data).map(site => ({
+        x: data[site].x,
+        y: data[site].y,
+        mode: "lines+markers",
+        name: site
+    }));
+
+    Plotly.newPlot("graph-latence", traces, {
+        title: "Latence en temps réel",
+        template: "plotly_dark"
+    });
+};
+</script>
+
+{% endblock %}

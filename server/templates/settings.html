@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Paramètres du Cluster</title>
+
+    <style>
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #58a6ff;
+        }
+
+        .form-container {
+            width: 90%;
+            margin: auto;
+            background: #161b22;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #3fb950;
+        }
+
+        input {
+            width: 50%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            margin-top: 5px;
+            background: #21262d;
+            color: #e6edf3;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Paramètres du Cluster</h1>
+
+<div class="form-container">
+    <form action="/update-settings" method="POST">
+
+        {% for key, value in settings.items() %}
+            <label>{{ key }}</label>
+            <input type="text" name="{{ key }}" value="{{ value }}">
+        {% endfor %}
+
+        <button type="submit">Mettre à jour</button>
+    </form>
+</div>
+
+</body>
+</html>

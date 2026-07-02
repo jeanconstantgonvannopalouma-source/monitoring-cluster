@@ -1,0 +1,116 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Topologie du cluster</h1>
+
+<div id="graph" style="width:100%;height:600px;border:1px solid #ccc;"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+fetch("/topology_data")
+    .then(r => r.json())
+    .then(data => {
+        const agents = Object.entries(data.agents).map(([name, a]) => ({
+            id: name,
+            cpu: a.cpu,
+            ram: a.ram,
+            status: a.status,
+            nb_sites: a.nb_sites
+        }));
+
+        const links = data.links.map(l => ({
+            source: l.from,
+            target: l.to,
+            latency: l.latence
+        }));
+
+        const width = document.getElementById("graph").clientWidth;
+        const height = 600;
+
+        const svg = d3.select("#graph")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const color = d3.scaleOrdinal()
+            .domain(["UP", "DOWN"])
+            .range(["#4CAF50", "#F44336"]);
+
+        const size = d3.scaleLinear()
+            .domain([0, 100])
+            .range([20, 60]);
+
+        const linkColor = d3.scaleLinear()
+            .domain([0, 200])
+            .range(["green", "red"]);
+
+        const simulation = d3.forceSimulation(agents)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(200))
+            .force("charge", d3.forceManyBody().strength(-500))
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        const link = svg.append("g")
+            .selectAll("line")
+            .data(links)
+            .enter()
+            .append("line")
+            .attr("stroke", d => linkColor(d.latency || 200))
+            .attr("stroke-width", 2);
+
+        const node = svg.append("g")
+            .selectAll("circle")
+            .data(agents)
+            .enter()
+            .append("circle")
+            .attr("r", d => size(d.cpu))
+            .attr("fill", d => color(d.status))
+            .call(d3.drag()
+                .on("start", dragstart)
+                .on("drag", dragged)
+                .on("end", dragend));
+
+        const label = svg.append("g")
+            .selectAll("text")
+            .data(agents)
+            .enter()
+            .append("text")
+            .text(d => d.id)
+            .attr("font-size", "14px")
+            .attr("fill", "#333");
+
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            label
+                .attr("x", d => d.x + 10)
+                .attr("y", d => d.y + 5);
+        });
+
+        function dragstart(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragend(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+    });
+</script>
+
+{% endblock %}

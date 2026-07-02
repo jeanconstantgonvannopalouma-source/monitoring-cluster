@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Mise à jour des agents</h1>
+
+<form method="POST">
+    <label>Choisir un agent :</label>
+    <select name="agent">
+        {% for name, a in agents.items() %}
+            <option value="{{ name }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Code à envoyer :</label>
+    <textarea name="code" rows="20" cols="80"></textarea>
+
+    <button type="submit">Envoyer la mise à jour</button>
+</form>
+
+{% endblock %}

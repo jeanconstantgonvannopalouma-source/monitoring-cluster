@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Prédiction de panne – {{ site }}</h1>
+
+<div class="card">
+    <h2>Risque estimé</h2>
+    <p style="font-size:2em;font-weight:bold;">
+        {{ data.risque }}%
+    </p>
+    <p style="font-size:1.5em;">
+        Niveau : 
+        {% if data.niveau == "Critique" %}
+            <span style="color:red;font-weight:bold">{{ data.niveau }}</span>
+        {% elif data.niveau == "Élevé" %}
+            <span style="color:orange;font-weight:bold">{{ data.niveau }}</span>
+        {% elif data.niveau == "Modéré" %}
+            <span style="color:gold;font-weight:bold">{{ data.niveau }}</span>
+        {% else %}
+            <span style="color:green;font-weight:bold">{{ data.niveau }}</span>
+        {% endif %}
+    </p>
+</div>
+
+<div class="card">
+    <h2>Détails</h2>
+    <p>Instabilité récente : {{ data.instabilite }}%</p>
+    <p>Latence moyenne : {{ data.latence_moy }} ms</p>
+    <p>Variance latence : {{ data.variance }}</p>
+    <p>Tendance latence : {{ data.tendance }} ms</p>
+</div>
+
+{% endblock %}

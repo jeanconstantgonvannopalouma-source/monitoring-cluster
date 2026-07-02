@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Graphiques</h1>
+
+<div class="card">
+    <iframe src="/static/graph.html" width="100%" height="600"></iframe>
+</div>
+
+{% endblock %}
+import pandas as pd
+import plotly.express as px
+from config import FICHIER_LOG
+
+def generer_graphique_plotly():
+    df = pd.read_csv(FICHIER_LOG)
+    df["value"] = df["status"].apply(lambda x: 1 if x == "UP" else 0)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+
+    fig = px.line(
+        df,
+        x="timestamp",
+        y="value",
+        color="site",
+        markers=True,
+        title="Évolution de la disponibilité des sites",
+        labels={"value": "Statut (1=UP, 0=DOWN)", "timestamp": "Temps"}
+    )
+
+    fig.update_yaxes(range=[-0.2, 1.2])
+    fig.update_layout(template="plotly_dark", title_x=0.5)
+
+    fig.write_html("static/graph.html")

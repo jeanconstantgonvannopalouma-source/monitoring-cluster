@@ -1,0 +1,126 @@
+{"timestamp": "2026-06-29 11:05:15", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 3 ms"}
+{"timestamp": "2026-06-29 11:05:18", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 3 ms"}}
+{"timestamp": "2026-06-29 11:56:54", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 2 ms"}
+{"timestamp": "2026-06-29 11:56:56", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 2 ms"}}
+{"timestamp": "2026-06-29 11:56:56", "site": "site", "event": "TEST", "status": "DOWN", "latency": 2, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 11:59:12", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 11:59:14", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 11:59:14", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 11:59:16", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 11:59:16", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 12:23:58", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 12:24:00", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 12:24:03", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 3031, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 12:24:03", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 12:24:05", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 12:24:05", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 12:39:15", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 12:39:17", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 12:39:17", "site": "http://google.com", "event": "Latence élevée", "status": null, "latency": null, "details": "3031.0 ms"}
+{"timestamp": "2026-06-29 12:39:19", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Latence élevée - http://google.com", "message": "Source : http://google.com\n\nDétails : 3031.0 ms"}}
+{"timestamp": "2026-06-29 12:39:19", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "3 DOWN"}
+{"timestamp": "2026-06-29 12:39:20", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 3 DOWN"}}
+{"timestamp": "2026-06-29 12:39:21", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 768, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 12:39:21", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 12:39:24", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 12:39:24", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 16:37:40", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 16:37:43", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 16:37:43", "site": "http://google.com", "event": "Latence élevée", "status": null, "latency": null, "details": "1899.5 ms"}
+{"timestamp": "2026-06-29 16:37:45", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Latence élevée - http://google.com", "message": "Source : http://google.com\n\nDétails : 1899.5 ms"}}
+{"timestamp": "2026-06-29 16:37:45", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "4 DOWN"}
+{"timestamp": "2026-06-29 16:37:49", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 4 DOWN"}}
+{"timestamp": "2026-06-29 16:37:49", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 706, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 16:37:49", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 16:37:52", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 16:37:53", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 16:39:11", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 16:39:12", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 16:39:12", "site": "http://google.com", "event": "Latence élevée", "status": null, "latency": null, "details": "1501.67 ms"}
+{"timestamp": "2026-06-29 16:39:15", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Latence élevée - http://google.com", "message": "Source : http://google.com\n\nDétails : 1501.67 ms"}}
+{"timestamp": "2026-06-29 16:39:15", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "5 DOWN"}
+{"timestamp": "2026-06-29 16:39:17", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 5 DOWN"}}
+{"timestamp": "2026-06-29 16:39:17", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 235, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 16:39:17", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 16:39:21", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 16:39:21", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 16:40:23", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 16:40:30", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 16:40:30", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "6 DOWN"}
+{"timestamp": "2026-06-29 16:40:35", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 6 DOWN"}}
+{"timestamp": "2026-06-29 16:40:36", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 389, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 16:40:36", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 16:40:41", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 16:40:41", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 18:05:13", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 18:05:17", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 18:05:17", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "7 DOWN"}
+{"timestamp": "2026-06-29 18:05:20", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 7 DOWN"}}
+{"timestamp": "2026-06-29 18:05:21", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 983, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 18:05:21", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 18:05:23", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 18:05:23", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 20:13:20", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 20:13:24", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 20:13:24", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "8 DOWN"}
+{"timestamp": "2026-06-29 20:13:28", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 8 DOWN"}}
+{"timestamp": "2026-06-29 20:13:28", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 453, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 20:13:28", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 20:13:31", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 20:13:31", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 20:23:31", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 20:23:56", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 20:23:56", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "9 DOWN"}
+{"timestamp": "2026-06-29 20:24:10", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 9 DOWN"}}
+{"timestamp": "2026-06-29 20:24:11", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 259, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 20:24:11", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 20:24:14", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 20:24:14", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 21:26:48", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-06-29 21:26:51", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-06-29 21:26:51", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "10 DOWN"}
+{"timestamp": "2026-06-29 21:26:54", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 10 DOWN"}}
+{"timestamp": "2026-06-29 21:26:54", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 275, "details": {"agent": "server"}}
+{"timestamp": "2026-06-29 21:26:54", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-06-29 21:26:56", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-06-29 21:26:56", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 17:52:03", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-07-02 17:52:05", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-07-02 17:52:05", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "11 DOWN"}
+{"timestamp": "2026-07-02 17:52:07", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 11 DOWN"}}
+{"timestamp": "2026-07-02 17:52:09", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 1503, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 17:52:09", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-07-02 17:52:12", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-07-02 17:52:12", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 18:06:59", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-07-02 18:07:01", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-07-02 18:07:01", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "12 DOWN"}
+{"timestamp": "2026-07-02 18:07:02", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 12 DOWN"}}
+{"timestamp": "2026-07-02 18:07:03", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 395, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 18:07:03", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-07-02 18:07:04", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-07-02 18:07:04", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 18:39:33", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-07-02 18:39:35", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-07-02 18:39:35", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "13 DOWN"}
+{"timestamp": "2026-07-02 18:39:38", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 13 DOWN"}}
+{"timestamp": "2026-07-02 18:39:38", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 343, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 18:39:38", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-07-02 18:39:41", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-07-02 18:39:41", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 18:40:30", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-07-02 18:40:32", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-07-02 18:40:32", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "14 DOWN"}
+{"timestamp": "2026-07-02 18:40:33", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 14 DOWN"}}
+{"timestamp": "2026-07-02 18:40:33", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 341, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 18:40:33", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-07-02 18:40:35", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-07-02 18:40:35", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 20:24:12", "site": "site", "event": "Instabilité", "status": null, "latency": null, "details": "Disponibilité 0.0%"}
+{"timestamp": "2026-07-02 20:24:14", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Instabilité - site", "message": "Source : site\n\nDétails : Disponibilité 0.0%"}}
+{"timestamp": "2026-07-02 20:24:14", "site": "site", "event": "Pannes fréquentes", "status": null, "latency": null, "details": "15 DOWN"}
+{"timestamp": "2026-07-02 20:24:15", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Pannes fréquentes - site", "message": "Source : site\n\nDétails : 15 DOWN"}}
+{"timestamp": "2026-07-02 20:24:16", "site": "http://google.com", "event": "TEST", "status": "UP", "latency": 323, "details": {"agent": "server"}}
+{"timestamp": "2026-07-02 20:24:16", "site": "site", "event": "Site DOWN", "status": null, "latency": null, "details": "Temps de réponse : 0 ms"}
+{"timestamp": "2026-07-02 20:24:17", "site": "SYSTEM", "event": "Alerte email envoyée", "status": null, "latency": null, "details": {"subject": "[ALERTE] Site DOWN - site", "message": "Source : site\n\nDétails : Temps de réponse : 0 ms"}}
+{"timestamp": "2026-07-02 20:24:17", "site": "site", "event": "TEST", "status": "DOWN", "latency": 0, "details": {"agent": "server"}}

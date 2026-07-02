@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>État du réseau du cluster</h1>
+
+<div class="card">
+    <h2>Score réseau</h2>
+    <p style="font-size:2em;font-weight:bold;">
+        {{ data.score }} / 100
+    </p>
+</div>
+
+<h2>Latence entre agents</h2>
+
+<table>
+    <tr>
+        <th>De</th>
+        <th>Vers</th>
+        <th>Latence (ms)</th>
+    </tr>
+
+    {% for link in data.links %}
+    <tr>
+        <td>{{ link.from }}</td>
+        <td>{{ link.to }}</td>
+        <td>
+            {% if link.latence == None %}
+                <span style="color:red;font-weight:bold">Injoignable</span>
+            {% elif link.latence > 200 %}
+                <span style="color:red;font-weight:bold">{{ link.latence }}</span>
+            {% elif link.latence > 100 %}
+                <span style="color:orange;font-weight:bold">{{ link.latence }}</span>
+            {% else %}
+                <span style="color:green;font-weight:bold">{{ link.latence }}</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

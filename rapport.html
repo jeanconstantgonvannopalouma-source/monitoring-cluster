@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Rapport SRE – État du système</h1>
+
+<div class="card">
+    <h2>KPIs globaux</h2>
+    <p>Disponibilité globale : {{ data.dispo_globale }}%</p>
+    <p>Latence moyenne : {{ data.latence_moy }} ms</p>
+</div>
+
+<div class="card">
+    <h2>Sites UP</h2>
+    <ul>
+        {% for s in data.sites_up %}
+            <li>{{ s }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="card">
+    <h2>Sites DOWN</h2>
+    <ul>
+        {% for s in data.sites_down %}
+            <li style="color:red;font-weight:bold">{{ s }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="card">
+    <h2>Pannes récentes</h2>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Site</th>
+            <th>Latence</th>
+        </tr>
+        {% for p in data.pannes %}
+        <tr>
+            <td>{{ p.timestamp }}</td>
+            <td>{{ p.site }}</td>
+            <td>{{ p.latency }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h2>Sites les plus instables</h2>
+    <ul>
+        {% for site, dispo in data.instabilite.items() %}
+            <li>{{ site }} — {{ dispo }}%</li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}

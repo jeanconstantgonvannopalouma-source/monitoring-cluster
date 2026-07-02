@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Santé du serveur</h1>
+
+<div class="card">
+    <h2>Ressources</h2>
+    <p>CPU : {{ cpu }} %</p>
+    <p>RAM : {{ ram }} %</p>
+    <p>Disque : {{ disk }} %</p>
+</div>
+
+<div class="card">
+    <h2>Système</h2>
+    <p>Uptime : {{ uptime }}</p>
+
+    {% if load %}
+        <p>Charge système : {{ load }}</p>
+    {% else %}
+        <p>Charge système : N/A</p>
+    {% endif %}
+
+    {% if temp_cpu %}
+        <p>Température CPU : {{ temp_cpu }} °C</p>
+    {% else %}
+        <p>Température CPU : N/A</p>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Cluster Health</h1>
+
+<div class="card">
+    <h2>Score global</h2>
+    <p style="font-size:2em;font-weight:bold;">
+        {{ data.score }} / 100
+    </p>
+</div>
+
+<div class="card">
+    <h2>Agents</h2>
+    <p>Total : {{ data.nb_agents }}</p>
+    <p>UP : <span style="color:green;font-weight:bold">{{ data.nb_up }}</span></p>
+    <p>DOWN : <span style="color:red;font-weight:bold">{{ data.nb_down }}</span></p>
+</div>
+
+<div class="card">
+    <h2>Charge du cluster</h2>
+    <p>CPU moyen : {{ data.cpu_moy }}%</p>
+    <p>RAM moyenne : {{ data.ram_moy }}%</p>
+    <p>Uptime moyen : {{ data.uptime_moy }} min</p>
+</div>
+
+<div class="card">
+    <h2>Sites surveillés</h2>
+    <p>Total : {{ data.sites_total }}</p>
+</div>
+
+{% endblock %}

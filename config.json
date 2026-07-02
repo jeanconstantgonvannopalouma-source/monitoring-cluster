@@ -1,0 +1,51 @@
+{
+    "sites": [
+        "https://google.com",
+        "https://github.com",
+        "https://api.monservice.com"
+    ],
+
+    "categories": {
+        "https://google.com": "Web",
+        "https://github.com": "Web",
+        "https://api.monservice.com": "API"
+    },
+
+    "agents": {
+        "Agent-1": {
+            "ip": "192.168.1.10",
+            "version": "1.0"
+            {
+         "agent_name": "Agent-1",
+         "version": "1.0",
+         "update_url": "http://TON_SERVEUR/update/Agent-1"
+               }
+
+        },
+          "Agent-2":{
+         "agent_name": "Agent-1",
+         "version": "1.0",
+         "update_url": "http://TON_SERVEUR/update/Agent-1"}
+
+ 
+          { "ip": "192.168.1.11",
+            "version": "1.0"
+        }
+    },
+
+    "monitoring": {
+        "interval": 60,
+        "timeout": 5
+    },
+
+    "anomalies": {
+        "latency_factor": 2.0,
+        "variation_factor": 1.5
+    },
+
+    "telegram": {
+        "enabled": true,
+        "chat_id": "123456789",
+        "token": "TON_TOKEN"
+    }
+}

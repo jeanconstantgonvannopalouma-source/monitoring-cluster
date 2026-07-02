@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Cluster Overview</title>
+    <link rel="stylesheet" href="/static/style.css">
+
+    <style>
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #58a6ff;
+        }
+
+        .section {
+            width: 90%;
+            margin: auto;
+            background: #161b22;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+        }
+
+        .section h2 {
+            color: #3fb950;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: #21262d;
+            padding: 20px;
+            border-radius: 10px;
+            width: 22%;
+            text-align: center;
+        }
+
+        .card h3 {
+            color: #58a6ff;
+        }
+
+        .card p {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        th {
+            background: #21262d;
+            color: #58a6ff;
+        }
+
+        tr:hover {
+            background: #1f2937;
+        }
+
+        .status-up {
+            color: #3fb950;
+            font-weight: bold;
+        }
+
+        .status-down {
+            color: #ff7b72;
+            font-weight: bold;
+        }
+
+        .anomaly {
+            color: #ff7b72;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Cluster Overview</h1>
+
+<!-- SECTION CLUSTER -->
+<div class="section">
+    <h2>État du Cluster</h2>
+
+    <div class="stats">
+        <div class="card">
+            <h3>Agents UP</h3>
+            <p>{{ cluster.nb_up }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Agents DOWN</h3>
+            <p>{{ cluster.nb_down }}</p>
+        </div>
+
+        <div class="card">
+            <h3>CPU Moyen</h3>
+            <p>{{ cluster.cpu_moy }}%</p>
+        </div>
+
+        <div class="card">
+            <h3>RAM Moyenne</h3>
+            <p>{{ cluster.ram_moy }}%</p>
+        </div>
+    </div>
+
+    <div class="stats" style="margin-top: 30px;">
+        <div class="card">
+            <h3>Sites UP</h3>
+            <p>{{ nb_up }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Sites DOWN</h3>
+            <p>{{ nb_down }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Score SRE</h3>
+            <p>{{ cluster.score }}%</p>
+        </div>
+
+        <div class="card">
+            <h3>Total Sites</h3>
+            <p>{{ nb_sites }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION ANOMALIES -->
+<div class="section">
+    <h2>Anomalies détectées</h2>
+
+    <table>
+        <tr>
+            <th>Site</th>
+            <th>Type</th>
+            <th>Détails</th>
+            <th>Horodatage</th>
+        </tr>
+
+        {% for a in anomalies %}
+        <tr>
+            <td>{{ a.site }}</td>
+            <td class="anomaly">{{ a.type }}</td>
+            <td>{{ a.value }}</td>
+            <td>{{ a.time }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<!-- SECTION SITES -->
+<div class="section">
+    <h2>Statut des Sites</h2>
+
+    <table>
+        <tr>
+            <th>Site</th>
+            <th>Status</th>
+            <th>Latence</th>
+            <th>Agent</th>
+            <th>Catégorie</th>
+        </tr>
+
+        {% for s in sites %}
+        <tr>
+            <td>{{ s.site }}</td>
+            <td class="{{ 'status-up' if s.status == 'UP' else 'status-down' }}">
+                {{ s.status }}
+            </td>
+            <td>{{ s.latency }} ms</td>
+            <td>{{ s.agent }}</td>
+            <td>{{ s.category }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+<a href="/metrics-history">📈 Voir l’historique des métriques</a>
+</body>
+</html>

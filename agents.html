@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Agents distants</h1>
+
+<table>
+    <tr>
+        <th>Nom</th>
+        <th>IP</th>
+        <th>Version</th>
+        <th>Dernière communication</th>
+        <th>Statut</th>
+    </tr>
+
+    {% for name, a in agents.items() %}
+    <tr>
+        <td>{{ name }}</td>
+        <td>{{ a.ip }}</td>
+        <td>{{ a.version }}</td>
+        <td>{{ a.last_seen | int }}</td>
+        <td>
+            {% if (a.last_seen + 60) > (now | int) %}
+                <span style="color:green;font-weight:bold">UP</span>
+            {% else %}
+                <span style="color:red;font-weight:bold">DOWN</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
+<th>CPU</th>
+<th>RAM</th>
+<th>Uptime</th>
+<td>{{ a.cpu }}%</td>
+<td>{{ a.ram }}%</td>
+<td>{{ (a.uptime // 60) | int }} min</td>
+<td>
+    {% if a.cpu > 80 %}
+        <span style="color:red;font-weight:bold">{{ a.cpu }}%</span>
+    {% elif a.cpu > 50 %}
+        <span style="color:orange;font-weight:bold">{{ a.cpu }}%</span>
+    {% else %}
+        <span style="color:green;font-weight:bold">{{ a.cpu }}%</span>
+    {% endif %}
+</td>
+
+<td>
+    {% if a.ram > 80 %}
+        <span style="color:red;font-weight:bold">{{ a.ram }}%</span>
+    {% elif a.ram > 50 %}
+        <span style="color:orange;font-weight:bold">{{ a.ram }}%</span>
+    {% else %}
+        <span style="color:green;font-weight:bold">{{ a.ram }}%</span>
+    {% endif %}
+</td>
+<th>Sites surveillés</th>
+<th>Nombre</th>
+<td>
+    {% if a.sites %}
+        <ul>
+        {% for site in a.sites %}
+            <li>{{ site }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        Aucun
+    {% endif %}
+</td>
+
+<td>{{ a.nb_sites }}</td>

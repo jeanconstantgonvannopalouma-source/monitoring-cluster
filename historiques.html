@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Historique des pannes</h1>
+
+<div class="card">
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Site</th>
+        <th>Statut</th>
+    </tr>
+
+    {% for ligne in historique %}
+    <tr>
+        <td>{{ ligne.timestamp }}</td>
+        <td>{{ ligne.site }}</td>
+        <td>{{ ligne.statut }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+{% endblock %}

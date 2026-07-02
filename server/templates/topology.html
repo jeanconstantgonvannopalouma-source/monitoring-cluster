@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Topologie Réseau</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body style="background:#0d1117; color:white; font-family:Arial;">
+
+<h1 style="text-align:center; color:#58a6ff;">Topologie du Réseau</h1>
+
+<div class="section" style="width:90%; margin:auto; background:#161b22; padding:20px; border-radius:10px;">
+    <h2 style="color:#3fb950;">Agents et Connexions</h2>
+
+    <table style="width:100%; border-collapse:collapse;">
+        <tr>
+            <th>Agent</th>
+            <th>IP</th>
+            <th>Connexions</th>
+        </tr>
+
+        {% for agent in data %}
+        <tr>
+            <td>{{ agent.name }}</td>
+            <td>{{ agent.ip }}</td>
+            <td>
+                {% for c in agent.connections %}
+                    <span style="color:#58a6ff;">{{ c }}</span><br>
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+</body>
+</html>

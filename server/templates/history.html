@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Historique du Cluster</title>
+
+    <style>
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #58a6ff;
+        }
+
+        table {
+            width: 95%;
+            margin: auto;
+            border-collapse: collapse;
+            background: #161b22;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 30px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        th {
+            background: #21262d;
+            color: #58a6ff;
+        }
+
+        tr:hover {
+            background: #1f2937;
+        }
+
+        .type {
+            font-weight: bold;
+        }
+
+        .type-down {
+            color: #ff7b72;
+        }
+
+        .type-up {
+            color: #3fb950;
+        }
+
+        .type-warning {
+            color: #f0ad4e;
+        }
+
+        .timestamp {
+            color: #8b949e;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Historique du Cluster</h1>
+
+<table>
+    <tr>
+        <th>Source</th>
+        <th>Type</th>
+        <th>Détails</th>
+        <th>Horodatage</th>
+    </tr>
+
+    {% for e in events %}
+    <tr>
+        <td>{{ e.site }}</td>
+
+        <td class="type
+            {% if 'DOWN' in e.type %}type-down
+            {% elif 'UP' in e.type %}type-up
+            {% else %}type-warning
+            {% endif %}
+        ">
+            {{ e.type }}
+        </td>
+
+        <td>{{ e.details }}</td>
+        <td class="timestamp">{{ e.timestamp }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

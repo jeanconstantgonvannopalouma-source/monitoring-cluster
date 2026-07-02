@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Anomalies détectées</h1>
+
+{% if anomalies|length == 0 %}
+    <p>Aucune anomalie détectée récemment.</p>
+{% else %}
+<table>
+    <tr>
+        <th>Site</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Valeur</th>
+        <th>Seuil</th>
+    </tr>
+
+    {% for a in anomalies %}
+    <tr>
+        <td>{{ a.site }}</td>
+        <td>{{ a.type }}</td>
+        <td>{{ a.timestamp }}</td>
+        <td>{{ a.valeur }}</td>
+        <td>{{ a.seuil }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

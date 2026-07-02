@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Logs du Cluster</title>
+
+    <style>
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #58a6ff;
+        }
+
+        table {
+            width: 95%;
+            margin: auto;
+            border-collapse: collapse;
+            background: #161b22;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 30px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        th {
+            background: #21262d;
+            color: #58a6ff;
+        }
+
+        tr:hover {
+            background: #1f2937;
+        }
+
+        .event {
+            font-weight: bold;
+            color: #3fb950;
+        }
+
+        .error {
+            font-weight: bold;
+            color: #ff7b72;
+        }
+
+        .warning {
+            font-weight: bold;
+            color: #f0ad4e;
+        }
+
+        .timestamp {
+            color: #8b949e;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Logs du Cluster</h1>
+
+<table>
+    <tr>
+        <th>Timestamp</th>
+        <th>Source</th>
+        <th>Événement</th>
+        <th>Détails</th>
+    </tr>
+
+    {% for log in logs %}
+    <tr>
+        <td class="timestamp">{{ log.timestamp }}</td>
+        <td>{{ log.agent }}</td>
+
+        <td class="
+            {% if 'DOWN' in log.event %}error{% elif 'UP' in log.event %}event{% else %}warning{% endif %}
+        ">
+            {{ log.event }}
+        </td>
+
+        <td>{{ log.details }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

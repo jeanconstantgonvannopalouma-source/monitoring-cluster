@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Résumé exécutif du système</h1>
+
+<div class="card">
+    <h2>Statistiques générales</h2>
+    <p>Total des sites : {{ total_sites }}</p>
+    <p>Sites UP : {{ sites_up }}</p>
+    <p>Sites DOWN : {{ sites_down }}</p>
+    <p>Disponibilité moyenne : {{ dispo_moyenne }}%</p>
+    <p>Latence moyenne : {{ latence_moyenne }} ms</p>
+</div>
+
+<div class="card">
+    <h2>Sites les plus lents</h2>
+    <ul>
+        {% for site, lat in lents.items() %}
+            <li>{{ site }} — {{ lat }} ms</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="card">
+    <h2>Sites les plus instables</h2>
+    <ul>
+        {% for site, dispo in instables.items() %}
+            <li>{{ site }} — {{ dispo }}%</li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}

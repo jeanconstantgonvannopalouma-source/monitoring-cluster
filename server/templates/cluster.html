@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Cluster</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body style="background:#0d1117; color:white; font-family:Arial;">
+
+<h1 style="text-align:center; color:#58a6ff;">Cluster - Agents</h1>
+
+<div class="section" style="width:90%; margin:auto; background:#161b22; padding:20px; border-radius:10px;">
+    <table style="width:100%; border-collapse:collapse;">
+        <tr>
+            <th>Nom</th>
+            <th>IP</th>
+            <th>Version</th>
+            <th>Dernier Ping</th>
+            <th>Status</th>
+        </tr>
+
+        {% for agent in data %}
+        <tr>
+            <td>{{ agent.name }}</td>
+            <td>{{ agent.ip }}</td>
+            <td>{{ agent.version }}</td>
+            <td>{{ agent.last_ping }}</td>
+            <td style="color:{{ 'lime' if agent.status == 'UP' else 'red' }};">
+                {{ agent.status }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+</body>
+</html>

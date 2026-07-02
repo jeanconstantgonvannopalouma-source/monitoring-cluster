@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des Sites</title>
+
+    <style>
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #58a6ff;
+        }
+
+        table {
+            width: 95%;
+            margin: auto;
+            border-collapse: collapse;
+            background: #161b22;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 30px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        th {
+            background: #21262d;
+            color: #58a6ff;
+        }
+
+        tr:hover {
+            background: #1f2937;
+        }
+
+        .status-up {
+            color: #3fb950;
+            font-weight: bold;
+        }
+
+        .status-down {
+            color: #ff7b72;
+            font-weight: bold;
+        }
+
+        .form-container {
+            width: 95%;
+            margin: auto;
+            background: #161b22;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+        }
+
+        input, select {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            width: 30%;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+
+        .delete-btn {
+            color: #ff7b72;
+            font-weight: bold;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Gestion des Sites Monitorés</h1>
+
+<div class="form-container">
+    <form action="/add-site" method="POST">
+        <input type="text" name="site" placeholder="https://example.com" required>
+        <select name="category">
+            <option value="default">default</option>
+            <option value="critical">critical</option>
+            <option value="api">api</option>
+            <option value="external">external</option>
+        </select>
+        <button type="submit">Ajouter</button>
+    </form>
+</div>
+
+<table>
+    <tr>
+        <th>Site</th>
+        <th>Status</th>
+        <th>Latence</th>
+        <th>Agent</th>
+        <th>Catégorie</th>
+        <th>Action</th>
+    </tr>
+
+    {% for s in sites %}
+    <tr>
+        <td>{{ s.site }}</td>
+        <td class="{{ 'status-up' if s.status == 'UP' else 'status-down' }}">
+            {{ s.status }}
+        </td>
+        <td>{{ s.latency }} ms</td>
+        <td>{{ s.source }}</td>
+        <td>{{ s.category }}</td>
+        <td>
+            <a class="delete-btn" href="/delete-site/{{ s.site }}">Supprimer</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

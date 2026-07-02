@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Répartition des sites entre agents</h1>
+
+{% for agent, sites in assignments.items() %}
+<div class="card">
+    <h2>{{ agent }}</h2>
+    <p>Nombre de sites : {{ sites|length }}</p>
+
+    <ul>
+        {% for s in sites %}
+            <li>{{ s }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endfor %}
+
+{% endblock %}

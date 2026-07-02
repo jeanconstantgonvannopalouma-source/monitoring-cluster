@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Analyse des pannes</h1>
+
+<div class="card">
+<table>
+    <tr>
+        <th>Site</th>
+        <th>Instabilité (%)</th>
+        <th>Latence moyenne (ms)</th>
+        <th>Tendance latence</th>
+        <th>Risque de panne (%)</th>
+    </tr>
+
+    {% for site, a in analyses.items() %}
+    <tr>
+        <td>{{ site }}</td>
+        <td>{{ a.instabilite }}</td>
+        <td>{{ a.latence_moy }}</td>
+        <td>{{ a.tendance }}</td>
+        <td>
+            {% if a.risque > 70 %}
+                <span style="color:red;font-weight:bold">{{ a.risque }}</span>
+            {% elif a.risque > 40 %}
+                <span style="color:orange;font-weight:bold">{{ a.risque }}</span>
+            {% else %}
+                <span style="color:green;font-weight:bold">{{ a.risque }}</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+{% endblock %}

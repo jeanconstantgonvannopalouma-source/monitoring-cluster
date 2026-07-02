@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Configuration du système</h1>
+
+<pre>
+{{ cfg | tojson(indent=4) }}
+</pre>
+
+{% endblock %}

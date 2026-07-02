@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Historique des métriques</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<h1>📊 Historique des métriques</h1>
+
+<canvas id="cpuChart"></canvas>
+<canvas id="ramChart"></canvas>
+<canvas id="latencyChart"></canvas>
+<canvas id="dispoChart"></canvas>
+<canvas id="uptimeChart"></canvas>
+<canvas id="anomaliesChart"></canvas>
+
+<script>
+    const metrics = {{ metrics|tojson }};
+    const latence = {{ latence|tojson }};
+    const dispo = {{ dispo|tojson }};
+    const uptime = {{ uptime|tojson }};
+    const anomalies = {{ anomalies|tojson }};
+
+    const timestamps = metrics.map(m => m.timestamp);
+
+    // CPU
+    new Chart(cpuChart, {
+        type: "line",
+        data: {
+            labels: timestamps,
+            datasets: [{
+                label: "CPU (%)",
+                data: metrics.map(m => m.cpu),
+                borderColor: "red"
+            }]
+        }
+    });
+
+    // RAM
+    new Chart(ramChart, {
+        type: "line",
+        data: {
+            labels: timestamps,
+            datasets: [{
+                label: "RAM (%)",
+                data: metrics.map(m => m.ram),
+                borderColor: "blue"
+            }]
+        }
+    });
+
+    // Latence moyenne
+    new Chart(latencyChart, {
+        type: "line",
+        data: {
+            labels: latence.map(p => p.timestamp),
+            datasets: [{
+                label: "Latence moyenne (ms)",
+                data: latence.map(p => p.latency),
+                borderColor: "green"
+            }]
+        }
+    });
+
+    // Disponibilité
+    new Chart(dispoChart, {
+        type: "line",
+        data: {
+            labels: dispo.map(p => p.timestamp),
+            datasets: [{
+                label: "Disponibilité (%)",
+                data: dispo.map(p => p.dispo),
+                borderColor: "purple"
+            }]
+        }
+    });
+
+    // Uptime
+    new Chart(uptimeChart, {
+        type: "line",
+        data: {
+            labels: uptime.map(p => p.timestamp),
+            datasets: [{
+                label: "Uptime (s)",
+                data: uptime.map(p => p.uptime),
+                borderColor: "orange"
+            }]
+        }
+    });
+
+    // Anomalies
+    new Chart(anomaliesChart, {
+        type: "line",
+        data: {
+            labels: anomalies.map(p => p.timestamp),
+            datasets: [{
+                label: "Anomalies détectées",
+                data: anomalies.map(p => p.anomalies),
+                borderColor: "black"
+            }]
+        }
+    });
+</script>
+
+</body>
+</html>

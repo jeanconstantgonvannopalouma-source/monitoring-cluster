@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Performance globale du système</h1>
+
+<div class="card">
+    <h2>Score de santé</h2>
+    <p style="font-size: 2em; font-weight: bold;">
+        {{ data.score }} / 100
+    </p>
+</div>
+
+<div class="card">
+    <h2>Disponibilité</h2>
+    <p>{{ data.dispo_globale }}%</p>
+</div>
+
+<div class="card">
+    <h2>Latence moyenne</h2>
+    <p>{{ data.latence_moy }} ms</p>
+</div>
+
+<div class="card">
+    <h2>Tendance de latence</h2>
+    {% if data.tendance_latence > 0 %}
+        <p style="color:red;font-weight:bold">↑ Latence en hausse ({{ data.tendance_latence }} ms)</p>
+    {% elif data.tendance_latence < 0 %}
+        <p style="color:green;font-weight:bold">↓ Latence en baisse ({{ data.tendance_latence }} ms)</p>
+    {% else %}
+        <p>Stable</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Instabilité</h2>
+    <p>{{ data.instabilite }}%</p>
+</div>
+
+{% endblock %}

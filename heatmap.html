@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Heatmap de performance (latence)</h1>
+
+<div id="heatmap" style="height:600px;"></div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+var data = [{
+    z: {{ values|safe }},
+    x: {{ hours|safe }},
+    y: {{ days|safe }},
+    type: 'heatmap',
+    colorscale: 'Viridis'
+}];
+
+var layout = {
+    title: 'Latence moyenne par heure et par jour',
+    xaxis: { title: 'Heure' },
+    yaxis: { title: 'Jour' },
+    template: 'plotly_dark'
+};
+
+Plotly.newPlot('heatmap', data, layout);
+</script>
+
+{% endblock %}

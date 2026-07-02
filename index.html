@@ -1,0 +1,102 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Status des sites</h1>
+
+<div class="card">
+<table>
+    <tr>
+        <th>Site</th>
+        <th>Statut</th>
+        <th>Dernier test</th>
+    </tr>
+
+    {% for _, row in derniers.iterrows() %}
+    <tr>
+        <td>{{ row.site }}</td>
+        <td>
+            {% if row.status == "UP" %}
+                <span class="badge-up">UP</span>
+            {% else %}
+                <span class="badge-down">DOWN</span>
+            {% endif %}
+        </td>
+        <td>{{ row.timestamp }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+{% endblock %}
+<th>Disponibilité</th>
+<td>
+    {% for s in stats %}
+        {% if s.site == row.site %}
+            {{ s.dispo_total }} %
+        {% endif %}
+    {% endfor %}
+</td>
+{% if s.dispo_total >= 99 %}
+    <span class="badge-green">{{ s.dispo_total }}%</span>
+{% elif s.dispo_total >= 95 %}
+    <span class="badge-orange">{{ s.dispo_total }}%</span>
+{% else %}
+    <span class="badge-red">{{ s.dispo_total }}%</span>
+{% endif %}
+</td>
+<th>Dispo 24h</th>
+<th>Dispo 7j</th>
+<th>Dispo totale</th>
+<td>
+    {% set s = stats.get(row.site) %}
+    {% if s and s.h24 is not none %}
+        {{ s.h24 }} %
+    {% else %}
+        N/A
+    {% endif %}
+</td>
+const evtSource = new EventSource("/stream");
+
+evtSource.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+
+    data.forEach(item => {
+        const row = document.getElementById("row-" + item.site);
+        if (!row) return;
+
+        // statut
+        const statusCell = row.querySelector(".status");
+        statusCell.innerHTML = item.status === "UP"
+            ? "<span class='badge-up'>UP</span>"
+            : "<span class='badge-down'>DOWN</span>";
+
+        // latence
+        const latCell = row.querySelector(".latency");
+        if (item.latency) {
+            latCell.innerHTML = Math.round(item.latency) + " ms";
+        } else {
+            latCell.innerHTML = "N/A";
+        }
+
+        // timestamp
+        const tsCell = row.querySelector(".timestamp");
+        tsCell.innerHTML = item.timestamp;
+    });
+};
+<tr id="row-{{ row.site }}">
+<td class="status">…</td>
+<td class="latency">…</td>
+<td class="timestamp">…</td>
+<th>Source</th>
+<td>{{ row.source }}</td>
+<p>Intervalle actuel : <span id="interval"></span> secondes</p>
+
+fetch("/interval")
+  .then(r => r.json())
+  .then(data => {
+      document.getElementById("interval").innerText = data.interval;
+  });
+
+
+
+

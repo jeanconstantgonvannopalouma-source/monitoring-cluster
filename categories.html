@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Catégories de sites</h1>
+
+{% for cat, s in stats.items() %}
+<div class="card">
+    <h2>{{ cat }}</h2>
+    <p>Disponibilité moyenne : {{ s.dispo }}%</p>
+    <p>Latence moyenne : {{ s.latence }} ms</p>
+
+    <h3>Sites :</h3>
+    <ul>
+        {% for site in s.sites %}
+            <li>{{ site }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endfor %}
+
+{% endblock %}

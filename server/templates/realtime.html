@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Realtime Monitoring</title>
+
+    <style>
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #58a6ff;
+        }
+
+        table {
+            width: 95%;
+            margin: auto;
+            border-collapse: collapse;
+            background: #161b22;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 30px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        th {
+            background: #21262d;
+            color: #58a6ff;
+        }
+
+        tr:hover {
+            background: #1f2937;
+        }
+
+        .status-up {
+            color: #3fb950;
+            font-weight: bold;
+        }
+
+        .status-down {
+            color: #ff7b72;
+            font-weight: bold;
+        }
+
+        #cluster {
+            width: 95%;
+            margin: auto;
+            background: #161b22;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+        }
+
+        #cluster h2 {
+            color: #3fb950;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Monitoring en Temps Réel</h1>
+
+<div id="cluster">
+    <h2>État du Cluster</h2>
+    <p id="agents"></p>
+    <p id="cpu"></p>
+    <p id="ram"></p>
+    <p id="score"></p>
+</div>
+
+<table id="table-sites">
+    <tr>
+        <th>Site</th>
+        <th>Status</th>
+        <th>Latence</th>
+        <th>Agent</th>
+        <th>Catégorie</th>
+    </tr>
+</table>
+
+<script>
+    const evtSource = new EventSource("/stream");
+
+    evtSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+
+        // -----------------------------
+        // CLUSTER
+        // -----------------------------
+        document.getElementById("agents").innerHTML =
+            "Agents UP : " + data.cluster.nb_up + " / " + data.cluster.nb_agents;
+
+        document.getElementById("cpu").innerHTML =
+            "CPU moyen : " + data.cluster.cpu_moy + "%";
+
+        document.getElementById("ram").innerHTML =
+            "RAM moyenne : " + data.cluster.ram_moy + "%";
+
+        document.getElementById("score").innerHTML =
+            "Score SRE : " + data.cluster.score + "%";
+
+        // -----------------------------
+        // TABLE DES SITES
+        // -----------------------------
+        const table = document.getElementById("table-sites");
+
+        // Effacer les anciennes lignes
+        table.innerHTML = `
+            <tr>
+                <th>Site</th>
+                <th>Status</th>
+                <th>Latence</th>
+                <th>Agent</th>
+                <th>Catégorie</th>
+            </tr>
+        `;
+
+        data.sites.forEach(s => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${s.site}</td>
+                <td class="${s.status === 'UP' ? 'status-up' : 'status-down'}">
+                    ${s.status}
+                </td>
+                <td>${s.latency} ms</td>
+                <td>${s.agent}</td>
+                <td>${s.category}</td>
+            `;
+
+            table.appendChild(row);
+        });
+    };
+</script>
+
+</body>
+</html>

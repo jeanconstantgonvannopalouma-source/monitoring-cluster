@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Graphes du Cluster</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #58a6ff;
+        }
+
+        .graph-container {
+            width: 90%;
+            margin: auto;
+            background: #161b22;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+        }
+
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Graphes du Cluster</h1>
+
+<div class="graph-container">
+    <h2>Latence des Sites</h2>
+    <canvas id="latenceChart"></canvas>
+</div>
+
+<div class="graph-container">
+    <h2>Disponibilité (UP/DOWN)</h2>
+    <canvas id="dispoChart"></canvas>
+</div>
+
+<script>
+    const timestamps = {{ timestamps | tojson }};
+    const latences = {{ latences | tojson }};
+    const dispo = {{ dispo | tojson }};
+
+    // -----------------------------
+    // GRAPHE LATENCE
+    // -----------------------------
+    new Chart(document.getElementById("latenceChart"), {
+        type: "line",
+        data: {
+            labels: timestamps,
+            datasets: [{
+                label: "Latence (ms)",
+                data: latences,
+                borderColor: "#58a6ff",
+                backgroundColor: "rgba(88,166,255,0.2)",
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // -----------------------------
+    // GRAPHE DISPONIBILITÉ
+    // -----------------------------
+    new Chart(document.getElementById("dispoChart"), {
+        type: "line",
+        data: {
+            labels: timestamps,
+            datasets: [{
+                label: "Disponibilité (1 = UP, 0 = DOWN)",
+                data: dispo,
+                borderColor: "#3fb950",
+                backgroundColor: "rgba(63,185,80,0.2)",
+                borderWidth: 2,
+                stepped: true
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    min: -0.1,
+                    max: 1.1,
+                    ticks: {
+                        callback: value => value === 1 ? "UP" : "DOWN"
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

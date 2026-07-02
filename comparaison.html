@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Comparaison de sites</h1>
+
+<form method="POST">
+    <h3>Choisissez les sites à comparer :</h3>
+
+    {% for s in sites %}
+        <label>
+            <input type="checkbox" name="sites" value="{{ s }}">
+            {{ s }}
+        </label><br>
+    {% endfor %}
+
+    <button type="submit">Comparer</button>
+</form>
+
+{% if resultats %}
+<div class="card">
+    <h2>Résultats</h2>
+    <table>
+        <tr>
+            <th>Site</th>
+            <th>Disponibilité (%)</th>
+            <th>Latence moyenne (ms)</th>
+            <th>Tendance latence</th>
+        </tr>
+
+        {% for site, r in resultats.items() %}
+        <tr>
+            <td>{{ site }}</td>
+            <td>{{ r.dispo }}</td>
+            <td>{{ r.latence }}</td>
+            <td>
+                {% if r.tendance > 0 %}
+                    <span style="color:red;font-weight:bold">↑ {{ r.tendance }}</span>
+                {% elif r.tendance < 0 %}
+                    <span style="color:green;font-weight:bold">↓ {{ r.tendance }}</span>
+                {% else %}
+                    Stable
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
