@@ -83,5 +83,90 @@ def dashboard():
                     continue
     return render_template_string(TEMPLATE, events=events)
 
+@app.route("/api/sites", methods=["GET"])
+def api_get_sites():
+    if not os.path.exists("sites.json"):
+        return jsonify([])
+    with open("sites.json", "r") as f:
+        return jsonify(json.load(f))
+
+@app.route("/api/sites", methods=["POST"])
+def api_add_site():
+    data = request.json
+    if "url" not in data:
+        return {"error": "Missing 'url'"}, 400
+
+    sites = []
+    if os.path.exists("sites.json"):
+        with open("sites.json", "r") as f:
+            sites = json.load(f)
+
+    sites.append(data["url"])
+
+    with open("sites.json", "w") as f:
+        json.dump(sites, f)
+
+    return {"status": "added", "url": data["url"]}
+
+@app.route("/api/sites/<path:url>", methods=["DELETE"])
+def api_delete_site(url):
+    if not os.path.exists("sites.json"):
+        return {"error": "No sites"}, 404
+
+    with open("sites.json", "r") as f:
+        sites = json.load(f)
+
+    if url not in sites:
+        return {"error": "Site not found"}, 404
+
+    sites.remove(url)
+
+    with open("sites.json", "w") as f:
+        json.dump(sites, f)
+
+    return {"status": "deleted", "url": url}
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
+@app.route("/api/sites", methods=["GET"])
+def api_get_sites():
+    if not os.path.exists("sites.json"):
+        return jsonify([])
+    with open("sites.json", "r") as f:
+        return jsonify(json.load(f))
+
+@app.route("/api/sites", methods=["POST"])
+def api_add_site():
+    data = request.json
+    if "url" not in data:
+        return {"error": "Missing 'url'"}, 400
+
+    sites = []
+    if os.path.exists("sites.json"):
+        with open("sites.json", "r") as f:
+            sites = json.load(f)
+
+    sites.append(data["url"])
+
+    with open("sites.json", "w") as f:
+        json.dump(sites, f)
+
+    return {"status": "added", "url": data["url"]}
+
+@app.route("/api/sites/<path:url>", methods=["DELETE"])
+def api_delete_site(url):
+    if not os.path.exists("sites.json"):
+        return {"error": "No sites"}, 404
+
+    with open("sites.json", "r") as f:
+        sites = json.load(f)
+
+    if url not in sites:
+        return {"error": "Site not found"}, 404
+
+    sites.remove(url)
+
+    with open("sites.json", "w") as f:
+        json.dump(sites, f)
+
+    return {"status": "deleted", "url": url}
