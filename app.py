@@ -38,7 +38,9 @@ init_db()
 
 app = Flask(__name__)
 
-LOG_FILE = "logs.jsonl"
+# ---------------------------
+# TEMPLATE HTML DU DASHBOARD
+# ---------------------------
 
 TEMPLATE = """
 <!doctype html>
@@ -49,6 +51,7 @@ TEMPLATE = """
   <style>
     body { font-family: sans-serif; background: #111; color: #eee; }
     h1 { text-align: center; }
+    h2 { margin-top: 40px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { padding: 8px; border-bottom: 1px solid #444; text-align: left; }
     th { background: #222; }
@@ -59,6 +62,28 @@ TEMPLATE = """
 </head>
 <body>
   <h1>Monitoring Cluster - Dashboard</h1>
+
+  <h2>Métriques</h2>
+  <table>
+    <tr>
+      <th>Site</th>
+      <th>Disponibilité (%)</th>
+      <th>Latence moyenne (ms)</th>
+      <th>Taux d’erreur (%)</th>
+      <th>Stabilité</th>
+    </tr>
+    {% for m in metrics %}
+    <tr>
+      <td>{{ m.site }}</td>
+      <td>{{ m.availability }}</td>
+      <td>{{ m.avg_latency }}</td>
+      <td>{{ m.error_rate }}</td>
+      <td>{{ m.stability }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <h2>Historique des événements</h2>
   <table>
     <tr>
       <th>Timestamp</th>
@@ -84,6 +109,10 @@ TEMPLATE = """
 </body>
 </html>
 """
+
+# ---------------------------
+# ROUTES DE BASE
+# ---------------------------
 
 @app.route("/")
 def home():
@@ -112,35 +141,6 @@ def event():
     conn.close()
 
     return {"status": "ok"}
-
-@app.route("/history")
-def history():
-    if not os.path.exists(LOG_FILE):
-        return jsonify([])
-    with open(LOG_FILE, "r") as f:
-        lines = [json.loads(line) for line in f]
-    return jsonify(lines)
-
-@app.route("/dashboard")
-def dashboard():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT timestamp, site, event, status, latency, details FROM events ORDER BY id DESC")
-    rows = c.fetchall()
-    conn.close()
-
-    events = []
-    for r in rows:
-        events.append({
-            "timestamp": r[0],
-            "site": r[1],
-            "event": r[2],
-            "status": r[3],
-            "latency": r[4],
-            "details": r[5]
-        })
-
-    return render_template_string(TEMPLATE, events=events)
 
 # ---------------------------
 # API SITES
@@ -181,6 +181,100 @@ def api_delete_site(url):
     conn.commit()
     conn.close()
     return {"status": "deleted", "url": url}
+
+# ---------------------------
+# API METRICS
+# ---------------------------
+
+@app.route("/api/metrics/<path:url>", methods=["GET"])
+def api_metrics(url):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT status, latency FROM events
+        WHERE site = ?
+    """, (url,))
+    rows = c.fetchall()
+
+    conn.close()
+
+    if not rows:
+        return jsonify({
+            "site": url,
+            "availability": 0,
+            "avg_latency": None,
+            "error_rate": 0,
+            "stability": "No data"
+        })
+
+    total = len(rows)
+    up = sum(1 for r in rows if r[0] == "UP")
+    down = sum(1 for r in rows if r[0] == "DOWN")
+
+    latencies = [r[1] for r in rows if r[1] is not None]
+    avg_latency = sum(latencies) / len(latencies) if latencies else None
+
+    availability = round((up / total) * 100, 2)
+    error_rate = round((down / total) * 100, 2)
+
+    last10 = rows[-10:]
+    up10 = sum(1 for r in last10 if r[0] == "UP")
+    down10 = sum(1 for r in last10 if r[0] == "DOWN")
+
+    if up10 >= 7:
+        stability = "Stable"
+    elif down10 >= 5:
+        stability = "Unstable"
+    else:
+        stability = "Fluctuating"
+
+    return jsonify({
+        "site": url,
+        "availability": availability,
+        "avg_latency": avg_latency,
+        "error_rate": error_rate,
+        "stability": stability
+    })
+
+# ---------------------------
+# DASHBOARD
+# ---------------------------
+
+@app.route("/dashboard")
+def dashboard():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    c.execute("SELECT timestamp, site, event, status, latency, details FROM events ORDER BY id DESC")
+    rows = c.fetchall()
+
+    events = []
+    for r in rows:
+        events.append({
+            "timestamp": r[0],
+            "site": r[1],
+            "event": r[2],
+            "status": r[3],
+            "latency": r[4],
+            "details": r[5]
+        })
+
+    c.execute("SELECT url FROM sites")
+    sites = [row[0] for row in c.fetchall()]
+
+    conn.close()
+
+    metrics = []
+    for site in sites:
+        m = api_metrics(site).json
+        metrics.append(m)
+
+    return render_template_string(TEMPLATE, events=events, metrics=metrics)
+
+# ---------------------------
+# LANCEMENT SERVEUR
+# ---------------------------
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
