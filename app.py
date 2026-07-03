@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, render_template_string
 import json
-import os
 import sqlite3
 
 DB_FILE = "database.db"
@@ -53,7 +52,7 @@ TEMPLATE = """
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body { font-family: sans-serif; background: #111; color: #eee; }
+    body { font-family: sans-serif; background: #111; color: #eee; margin: 0; padding: 20px; }
     h1 { text-align: center; }
     h2 { margin-top: 40px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -62,6 +61,7 @@ TEMPLATE = """
     tr:nth-child(even) { background: #181818; }
     .up { color: #4caf50; }
     .down { color: #f44336; }
+    canvas { background: #181818; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -126,7 +126,7 @@ TEMPLATE = """
     const statusData = {{ status_data | safe }};
     const availabilityData = {{ availability_chart_data | safe }};
 
-    // Latence
+    // Latence dans le temps
     const latencyLabels = latencyData.map(e => e.timestamp);
     const latencies = latencyData.map(e => e.latency);
 
@@ -151,7 +151,7 @@ TEMPLATE = """
       }
     });
 
-    // UP/DOWN
+    // Statut UP/DOWN dans le temps
     const statusLabels = statusData.map(e => e.timestamp);
     const statusValues = statusData.map(e => e.status_value);
 
@@ -163,7 +163,9 @@ TEMPLATE = """
         datasets: [{
           label: 'Status (1 = UP, 0 = DOWN)',
           data: statusValues,
-          backgroundColor: statusValues.map(v => v === 1 ? 'rgba(76, 175, 80, 0.7)' : 'rgba(244, 67, 54, 0.7)')
+          backgroundColor: statusValues.map(v =>
+            v === 1 ? 'rgba(76, 175, 80, 0.7)' : 'rgba(244, 67, 54, 0.7)'
+          )
         }]
       },
       options: {
