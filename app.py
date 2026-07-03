@@ -1,6 +1,40 @@
 from flask import Flask, request, jsonify, render_template_string
 import json
 import os
+import sqlite3
+
+DB_FILE = "database.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    # Table des événements
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            site TEXT,
+            event TEXT,
+            status TEXT,
+            latency INTEGER,
+            details TEXT
+        )
+    """)
+
+    # Table des sites
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS sites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT UNIQUE
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+# Initialisation au démarrage
+init_db()
 
 app = Flask(__name__)
 
@@ -50,7 +84,6 @@ TEMPLATE = """
 </body>
 </html>
 """
-
 @app.route("/")
 def home():
     return "Monitoring Cluster is running."
@@ -58,8 +91,25 @@ def home():
 @app.route("/event", methods=["POST"])
 def event():
     data = request.json
-    with open(LOG_FILE, "a") as f:
-        f.write(json.dumps(data) + "\n")
+
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    c.execute("""
+        INSERT INTO events (timestamp, site, event, status, latency, details)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        data.get("timestamp"),
+        data.get("site"),
+        data.get("event"),
+        data.get("status"),
+        data.get("latency"),
+        json.dumps(data.get("details"))
+    ))
+
+    conn.commit()
+    conn.close()
+
     return {"status": "ok"}
 
 @app.route("/history")
@@ -69,30 +119,38 @@ def history():
     with open(LOG_FILE, "r") as f:
         lines = [json.loads(line) for line in f]
     return jsonify(lines)
-
 @app.route("/dashboard")
 def dashboard():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT timestamp, site, event, status, latency, details FROM events ORDER BY id DESC")
+    rows = c.fetchall()
+    conn.close()
+
     events = []
-    if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "r") as f:
-            for line in f:
-                try:
-                    e = json.loads(line)
-                    events.append(e)
-                except:
-                    continue
+    for r in rows:
+        events.append({
+            "timestamp": r[0],
+            "site": r[1],
+            "event": r[2],
+            "status": r[3],
+            "latency": r[4],
+            "details": r[5]
+        })
+
     return render_template_string(TEMPLATE, events=events)
 
 # ---------------------------
 # API SITES (version correcte)
 # ---------------------------
-
 @app.route("/api/sites", methods=["GET"])
 def api_get_sites():
-    if not os.path.exists("sites.json"):
-        return jsonify([])
-    with open("sites.json", "r") as f:
-        return jsonify(json.load(f))
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT url FROM sites")
+    sites = [row[0] for row in c.fetchall()]
+    conn.close()
+    return jsonify(sites)
 
 @app.route("/api/sites", methods=["POST"])
 def api_add_site():
@@ -100,34 +158,25 @@ def api_add_site():
     if "url" not in data:
         return {"error": "Missing 'url'"}, 400
 
-    sites = []
-    if os.path.exists("sites.json"):
-        with open("sites.json", "r") as f:
-            sites = json.load(f)
-
-    sites.append(data["url"])
-
-    with open("sites.json", "w") as f:
-        json.dump(sites, f)
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    try:
+        c.execute("INSERT INTO sites (url) VALUES (?)", (data["url"],))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        return {"error": "Site already exists"}, 400
+    finally:
+        conn.close()
 
     return {"status": "added", "url": data["url"]}
 
 @app.route("/api/sites/<path:url>", methods=["DELETE"])
 def api_delete_site(url):
-    if not os.path.exists("sites.json"):
-        return {"error": "No sites"}, 404
-
-    with open("sites.json", "r") as f:
-        sites = json.load(f)
-
-    if url not in sites:
-        return {"error": "Site not found"}, 404
-
-    sites.remove(url)
-
-    with open("sites.json", "w") as f:
-        json.dump(sites, f)
-
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("DELETE FROM sites WHERE url = ?", (url,))
+    conn.commit()
+    conn.close()
     return {"status": "deleted", "url": url}
 
 if __name__ == "__main__":

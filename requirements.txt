@@ -4,3 +4,4 @@ stripe
 pandas
 psutil
 gunicorn
+sqlite3
