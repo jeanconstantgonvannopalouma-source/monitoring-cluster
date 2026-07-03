@@ -70,6 +70,12 @@ TEMPLATE = """
   <h2>Latence dans le temps</h2>
   <canvas id="latencyChart" width="400" height="150"></canvas>
 
+  <h2>Statut UP/DOWN dans le temps</h2>
+  <canvas id="statusChart" width="400" height="150"></canvas>
+
+  <h2>Disponibilité par site</h2>
+  <canvas id="availabilityChart" width="400" height="150"></canvas>
+
   <h2>Métriques</h2>
   <table>
     <tr>
@@ -114,17 +120,21 @@ TEMPLATE = """
     {% endfor %}
   </table>
 
-  <!-- Script du graphique -->
+  <!-- Script des graphiques -->
   <script>
     const latencyData = {{ latency_data | safe }};
-    const labels = latencyData.map(e => e.timestamp);
+    const statusData = {{ status_data | safe }};
+    const availabilityData = {{ availability_chart_data | safe }};
+
+    // Latence
+    const latencyLabels = latencyData.map(e => e.timestamp);
     const latencies = latencyData.map(e => e.latency);
 
-    const ctx = document.getElementById('latencyChart').getContext('2d');
-    new Chart(ctx, {
+    const latencyCtx = document.getElementById('latencyChart').getContext('2d');
+    new Chart(latencyCtx, {
       type: 'line',
       data: {
-        labels: labels,
+        labels: latencyLabels,
         datasets: [{
           label: 'Latence (ms)',
           data: latencies,
@@ -136,9 +146,51 @@ TEMPLATE = """
       },
       options: {
         scales: {
-          y: {
-            beginAtZero: true
-          }
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // UP/DOWN
+    const statusLabels = statusData.map(e => e.timestamp);
+    const statusValues = statusData.map(e => e.status_value);
+
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+      type: 'bar',
+      data: {
+        labels: statusLabels,
+        datasets: [{
+          label: 'Status (1 = UP, 0 = DOWN)',
+          data: statusValues,
+          backgroundColor: statusValues.map(v => v === 1 ? 'rgba(76, 175, 80, 0.7)' : 'rgba(244, 67, 54, 0.7)')
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true, max: 1 }
+        }
+      }
+    });
+
+    // Disponibilité par site
+    const availabilityLabels = availabilityData.map(e => e.site);
+    const availabilityValues = availabilityData.map(e => e.availability);
+
+    const availabilityCtx = document.getElementById('availabilityChart').getContext('2d');
+    new Chart(availabilityCtx, {
+      type: 'bar',
+      data: {
+        labels: availabilityLabels,
+        datasets: [{
+          label: 'Disponibilité (%)',
+          data: availabilityValues,
+          backgroundColor: 'rgba(33, 150, 243, 0.7)'
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true, max: 100 }
         }
       }
     });
@@ -289,6 +341,7 @@ def dashboard():
 
     events = []
     latency_data = []
+    status_data = []
     for r in rows:
         events.append({
             "timestamp": r[0],
@@ -304,21 +357,34 @@ def dashboard():
             "latency": r[4]
         })
 
+        status_value = 1 if r[3] == "UP" else 0
+        status_data.append({
+            "timestamp": r[0],
+            "status_value": status_value
+        })
+
     c.execute("SELECT url FROM sites")
     sites = [row[0] for row in c.fetchall()]
 
     conn.close()
 
     metrics = []
+    availability_chart_data = []
     for site in sites:
         m = api_metrics(site).json
         metrics.append(m)
+        availability_chart_data.append({
+            "site": m["site"],
+            "availability": m["availability"]
+        })
 
     return render_template_string(
         TEMPLATE,
         events=events,
         metrics=metrics,
-        latency_data=json.dumps(latency_data)
+        latency_data=json.dumps(latency_data),
+        status_data=json.dumps(status_data),
+        availability_chart_data=json.dumps(availability_chart_data)
     )
 
 # ---------------------------
