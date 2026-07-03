@@ -48,6 +48,10 @@ TEMPLATE = """
 <head>
   <meta charset="utf-8">
   <title>Monitoring Cluster</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body { font-family: sans-serif; background: #111; color: #eee; }
     h1 { text-align: center; }
@@ -62,6 +66,9 @@ TEMPLATE = """
 </head>
 <body>
   <h1>Monitoring Cluster - Dashboard</h1>
+
+  <h2>Latence dans le temps</h2>
+  <canvas id="latencyChart" width="400" height="150"></canvas>
 
   <h2>Métriques</h2>
   <table>
@@ -106,6 +113,37 @@ TEMPLATE = """
     </tr>
     {% endfor %}
   </table>
+
+  <!-- Script du graphique -->
+  <script>
+    const latencyData = {{ latency_data | safe }};
+    const labels = latencyData.map(e => e.timestamp);
+    const latencies = latencyData.map(e => e.latency);
+
+    const ctx = document.getElementById('latencyChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Latence (ms)',
+          data: latencies,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderWidth: 2,
+          tension: 0.3
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  </script>
+
 </body>
 </html>
 """
@@ -250,6 +288,7 @@ def dashboard():
     rows = c.fetchall()
 
     events = []
+    latency_data = []
     for r in rows:
         events.append({
             "timestamp": r[0],
@@ -258,6 +297,11 @@ def dashboard():
             "status": r[3],
             "latency": r[4],
             "details": r[5]
+        })
+
+        latency_data.append({
+            "timestamp": r[0],
+            "latency": r[4]
         })
 
     c.execute("SELECT url FROM sites")
@@ -270,7 +314,12 @@ def dashboard():
         m = api_metrics(site).json
         metrics.append(m)
 
-    return render_template_string(TEMPLATE, events=events, metrics=metrics)
+    return render_template_string(
+        TEMPLATE,
+        events=events,
+        metrics=metrics,
+        latency_data=json.dumps(latency_data)
+    )
 
 # ---------------------------
 # LANCEMENT SERVEUR
