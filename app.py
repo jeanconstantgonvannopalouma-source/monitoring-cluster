@@ -335,50 +335,67 @@ def api_metrics(url):
 
 @app.route("/dashboard")
 def dashboard():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
 
-    c.execute("SELECT timestamp, site, event, status, latency, details FROM events ORDER BY id DESC")
-    rows = c.fetchall()
+    # Données de test pour les graphiques
+    latency_data = [
+        {"timestamp": "2026-07-02 10:00", "latency": 120},
+        {"timestamp": "2026-07-02 10:05", "latency": 180},
+        {"timestamp": "2026-07-02 10:10", "latency": 90},
+        {"timestamp": "2026-07-02 10:15", "latency": 200},
+        {"timestamp": "2026-07-02 10:20", "latency": 150}
+    ]
 
-    events = []
-    latency_data = []
-    status_data = []
-    for r in rows:
-        events.append({
-            "timestamp": r[0],
-            "site": r[1],
-            "event": r[2],
-            "status": r[3],
-            "latency": r[4],
-            "details": r[5]
-        })
+    status_data = [
+        {"timestamp": "2026-07-02 10:00", "status_value": 1},
+        {"timestamp": "2026-07-02 10:05", "status_value": 0},
+        {"timestamp": "2026-07-02 10:10", "status_value": 1},
+        {"timestamp": "2026-07-02 10:15", "status_value": 1},
+        {"timestamp": "2026-07-02 10:20", "status_value": 0}
+    ]
 
-        latency_data.append({
-            "timestamp": r[0],
-            "latency": r[4]
-        })
+    availability_chart_data = [
+        {"site": "siteA.com", "availability": 92},
+        {"site": "siteB.com", "availability": 75},
+        {"site": "siteC.com", "availability": 100}
+    ]
 
-        status_value = 1 if r[3] == "UP" else 0
-        status_data.append({
-            "timestamp": r[0],
-            "status_value": status_value
-        })
+    # Données de test pour le tableau des événements
+    events = [
+        {
+            "timestamp": "2026-07-02 10:00",
+            "site": "siteA.com",
+            "event": "TEST",
+            "status": "UP",
+            "latency": 120,
+            "details": "agent: test"
+        },
+        {
+            "timestamp": "2026-07-02 10:05",
+            "site": "siteA.com",
+            "event": "TEST",
+            "status": "DOWN",
+            "latency": 0,
+            "details": "agent: test"
+        }
+    ]
 
-    c.execute("SELECT url FROM sites")
-    sites = [row[0] for row in c.fetchall()]
-
-    conn.close()
-
-    metrics = []
-    availability_chart_data = []
-    for site in sites:
-        m = api_metrics(site).json
-        metrics.append(m)
-        availability_chart_data.append({
-            "site": m["site"],
-            "availability": m["availability"]
-        })
+    # Données de test pour les métriques
+    metrics = [
+        {
+            "site": "siteA.com",
+            "availability": 92,
+            "avg_latency": 148,
+            "error_rate": 20,
+            "stability": "Stable"
+        },
+        {
+            "site": "siteB.com",
+            "availability": 75,
+            "avg_latency": 200,
+            "error_rate": 40,
+            "stability": "Fluctuating"
+        }
+    ]
 
     return render_template_string(
         TEMPLATE,
