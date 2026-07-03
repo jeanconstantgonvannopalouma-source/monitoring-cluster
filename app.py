@@ -84,6 +84,7 @@ TEMPLATE = """
 </body>
 </html>
 """
+
 @app.route("/")
 def home():
     return "Monitoring Cluster is running."
@@ -119,6 +120,7 @@ def history():
     with open(LOG_FILE, "r") as f:
         lines = [json.loads(line) for line in f]
     return jsonify(lines)
+
 @app.route("/dashboard")
 def dashboard():
     conn = sqlite3.connect(DB_FILE)
@@ -141,8 +143,9 @@ def dashboard():
     return render_template_string(TEMPLATE, events=events)
 
 # ---------------------------
-# API SITES (version correcte)
+# API SITES
 # ---------------------------
+
 @app.route("/api/sites", methods=["GET"])
 def api_get_sites():
     conn = sqlite3.connect(DB_FILE)
