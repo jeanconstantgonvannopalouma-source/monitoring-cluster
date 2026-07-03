@@ -1,0 +1,6 @@
+flask
+requests
+stripe
+pandas
+psutil
+gunicorn
