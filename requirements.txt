@@ -1,7 +1,6 @@
-flask
-requests
-stripe
-pandas
-psutil
-gunicorn
-sqlite3
+flask==3.0.2
+requests==2.31.0
+stripe==5.4.0
+pandas==2.2.2
+psutil==5.9.8
+gunicorn==21.2.0
