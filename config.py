@@ -9,7 +9,7 @@ os.makedirs(DOSSIER_DATA, exist_ok=True)
 
 # Fichiers utilisés par le cluster
 FICHIER_LOG = os.path.join(DOSSIER_DATA, "logs.csv")
-FICHIER_HISTORY = os.path.join(DOSSIER_DATA, "history.json")
+FICHIER_HISTORY =os.path.join("historique_pannes.json")
 FICHIER_SITES = os.path.join(BASE_DIR, "sites.txt")
 
 # Configuration email
@@ -26,7 +26,7 @@ TELEGRAM_CHAT_ID = "TON_CHAT_ID_ICI"
 # Paramètres du monitoring
 MONITOR_INTERVAL = 30        # secondes
 TIMEOUT = 5                  # timeout HTTP
-
+DEBUG= True
 # Seuils d'anomalies
 ANOMALY_LATENCY_FACTOR = 2.5
 ANOMALY_VARIATION_FACTOR = 3.0
