@@ -11,7 +11,8 @@ os.makedirs(DOSSIER_DATA, exist_ok=True)
 FICHIER_LOG = os.path.join(DOSSIER_DATA, "logs.csv")
 
 # ⚠️ Correction ici : nom + chemin correct
-FICHIER_HISTORIQUE = os.path.join(DOSSIER_DATA, "historique_pannes.json")
+FICHIER_HISTORY = "history.jsonl"
+FICHIER_HISTORIQUE = FICHIER_HISTORY
 
 FICHIER_SITES = os.path.join(BASE_DIR, "sites.txt")
 
