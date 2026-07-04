@@ -132,12 +132,13 @@ def overview():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    cluster = analyser_cluster(session["user_id"])
-    anomalies = detecter_anomalies()
+    # nos modules simples ne gèrent pas user_id → cluster global
+    cluster = analyser_cluster()
     sites = tester_tous_les_sites()
+    anomalies = detecter_anomalies(sites)
 
     nb_sites = len(sites)
-    nb_up = sum(1 for s in sites if s["status"] == "UP")
+    nb_up = sum(1 for s in sites if s.get("status") in (200, "UP"))
     nb_down = nb_sites - nb_up
 
     return render_template(
@@ -160,8 +161,8 @@ def stream():
     def event_stream():
         while True:
             sites = tester_tous_les_sites()
-            cluster = analyser_cluster(session.get("user_id"))
-            anomalies = detecter_anomalies()
+            cluster = analyser_cluster()
+            anomalies = detecter_anomalies(sites)
 
             data = {
                 "sites": sites,
@@ -187,7 +188,7 @@ def logs_page():
         with open("logs.jsonl", "r") as f:
             for line in f:
                 logs.append(json.loads(line))
-    except File.FileNotFoundError:
+    except FileNotFoundError:
         pass
 
     logs = sorted(logs, key=lambda x: x.get("timestamp", ""), reverse=True)
@@ -231,7 +232,7 @@ def api_logs():
 
 
 # ---------------------------------------------------------
-#                     API EVENTS (MANQUANTE)
+#                     API EVENTS
 # ---------------------------------------------------------
 
 @app.route("/api/events")
@@ -250,7 +251,7 @@ def api_events():
 
 
 # ---------------------------------------------------------
-#                     API METRICS (MANQUANTE)
+#                     API METRICS
 # ---------------------------------------------------------
 
 @app.route("/api/metrics")
@@ -310,7 +311,7 @@ def cluster():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    data = analyser_cluster(session["user_id"])
+    data = analyser_cluster()
     return render_template("cluster.html", data=data)
 
 
@@ -322,7 +323,8 @@ def cluster():
 def balancing():
     df = pd.read_csv(FICHIER_LOG)
     all_sites = sorted(df["site"].unique())
-    assignments = assign_sites_to_agents(all_sites)
+    agents = get_agents()
+    assignments = assign_sites_to_agents(all_sites, agents)
     return render_template("balancing.html", assignments=assignments)
 
 
@@ -369,17 +371,17 @@ def metrics():
         agent_name = data.get("agent") or data.get("name") or "agent"
 
         if cpu > 80:
-            alert_all(f"🔥 CPU élevé sur {agent_name} : {cpu}%", email=owner_email)
+            alert_all(f"🔥 CPU élevé sur {agent_name} : {cpu}%", [])
 
         if ram > 90:
-            alert_all(f"💥 RAM saturée sur {agent_name} : {ram}%", email=owner_email)
+            alert_all(f"💥 RAM saturée sur {agent_name} : {ram}%", [])
 
         results = data.get("results", [])
         if isinstance(results, list):
             down_sites = [r for r in results if r.get("status") == "DOWN"]
             for r in down_sites:
                 site_url = r.get("site")
-                alert_all(f"⚠️ Site DOWN : {site_url} (agent {agent_name})", email=owner_email)
+                alert_all(f"⚠️ Site DOWN : {site_url} (agent {agent_name})", [])
 
     except Exception as e:
         print("DEBUG: Erreur alertes metrics :", e)
@@ -401,8 +403,8 @@ threading.Thread(target=boucle_ping, daemon=True).start()
 
 def boucle_autoscaling():
     while True:
-        if "user_id" in session:
-            autoscaling(session["user_id"])
+        cluster_info = analyser_cluster()
+        autoscaling(cluster_info)
         time.sleep(10)
 
 threading.Thread(target=boucle_autoscaling, daemon=True).start()
@@ -417,7 +419,7 @@ def my_agents():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    agents = get_agents(session["user_id"])
+    agents = get_agents()
     return render_template("my_agents.html", agents=agents)
 
 
@@ -429,9 +431,9 @@ def my_sites():
     if request.method == "POST":
         url = request.form.get("url")
         if url:
-            add_site(url, session["user_id"])
+            add_site(url)
 
-    sites = get_sites(session["user_id"])
+    sites = get_sites()
     return render_template("my_sites.html", sites=sites)
 
 
@@ -440,7 +442,7 @@ def my_alerts():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    alerts = get_alerts(session["user_id"])
+    alerts = get_alerts()
     return render_template("my_alerts.html", alerts=alerts)
 
 
@@ -490,51 +492,6 @@ def metrics_history():
         uptime=uptime,
         anomalies=anomalies
     )
-
-
-# ---------------------------------------------------------
-#                     STRIPE CHECKOUT
-# ---------------------------------------------------------
-
-@app.route("/create-checkout-session", methods=["POST"])
-def create_checkout_session():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    plan = request.form.get("plan")
-
-    price_ids = {
-        "starter": "price_xxx",
-        "pro": "price_yyy",
-        "business": "price_zzz",
-        "enterprise": "price_aaa"
-    }
-
-    session_stripe = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        mode="subscription",
-        line_items=[{
-            "price": price_ids[plan],
-            "quantity": 1
-        }],
-        success_url="http://127.0.0.1:5000/success?plan=" + plan,
-        cancel_url="http://127.0.0.1:5000/pricing"
-    )
-
-    return redirect(session_stripe.url)
-
-
-@app.route("/success")
-def success():
-    plan = request.args.get("plan")
-
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, session["user_id"]))
-    conn.commit()
-    conn.close()
-
-    return render_template("success.html", plan=plan)
 
 
 # ---------------------------------------------------------
