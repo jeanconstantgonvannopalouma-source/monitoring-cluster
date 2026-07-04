@@ -1,19 +1,21 @@
+# history.py
+
+import json
 import os
-import datetime
 from config import FICHIER_HISTORIQUE
 
-def enregistrer_panne(site):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(FICHIER_HISTORIQUE, "a") as f:
-        f.write(f"{timestamp},{site},DOWN\n")
-
 def charger_historique_pannes():
+    """Charge l'historique des pannes depuis le fichier JSON."""
     if not os.path.exists(FICHIER_HISTORIQUE):
         return []
 
-    lignes = []
-    with open(FICHIER_HISTORIQUE, "r") as f:
-        for ligne in f:
-            timestamp, site, statut = ligne.strip().split(",")
-            lignes.append({"timestamp": timestamp, "site": site, "statut": statut})
-    return lignes
+    with open(FICHIER_HISTORIQUE, "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return []
+
+def sauvegarder_historique_pannes(historique):
+    """Sauvegarde l'historique des pannes dans le fichier JSON."""
+    with open(FICHIER_HISTORIQUE, "w", encoding="utf-8") as f:
+        json.dump(historique, f, indent=4, ensure_ascii=False)
