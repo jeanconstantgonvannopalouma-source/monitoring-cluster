@@ -2,7 +2,7 @@
 
 import json
 import os
-from config import FICHIER_HISTORIQUE
+from config import FICHIER_HISTORY as FICHIER_HISTORIQUE
 
 def charger_historique_pannes():
     """Charge l'historique des pannes depuis le fichier JSON."""
