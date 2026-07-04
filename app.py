@@ -1,414 +1,546 @@
-from flask import Flask, request, jsonify, render_template_string
+import os
 import json
-import sqlite3
+import time
+import threading
+from datetime import datetime
 
-DB_FILE = "database.db"
+import pandas as pd
+from flask import (
+    Flask,
+    render_template,
+    jsonify,
+    Response,
+    request,
+    redirect,
+    url_for,
+    session
+)
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
+# Modules internes
+from history import charger_historique_pannes
+from monitor import tester_tous_les_sites
+from config import FICHIER_LOG
+from sre_module import analyser_performance_globale
+from predictor import predire_panne
+from comparaison import comparer_sites
+from agents import update_agent, get_agents, ping_agents, analyser_cluster
+from balancer import assign_sites_to_agents
+from network import analyser_reseau
+from agent_logs import get_logs
+from autoscaling import calculer_intervalle_optimal
+from anomalies import detecter_anomalies
+from logger import log_event
+from sites_manager import get_sites, add_site
+from alerts_manager import add_alert, get_alerts
+from alerts import alert_all
+from history_metrics import (
+    charger_metrics,
+    extraire_latence_moyenne,
+    extraire_disponibilite,
+    extraire_uptime,
+    extraire_anomalies
+)
+from autoscaling_manager import autoscaling
 
-    # Table des événements
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            site TEXT,
-            event TEXT,
-            status TEXT,
-            latency INTEGER,
-            details TEXT
-        )
-    """)
-
-    # Table des sites
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS sites (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            url TEXT UNIQUE
-        )
-    """)
-
-    conn.commit()
-    conn.close()
-
-# Initialisation au démarrage
-init_db()
+# Base de données
+from db import init_db, get_conn
+import hashlib
+import secrets
 
 app = Flask(__name__)
+app.secret_key = "change_this_secret_key"
 
-# ---------------------------
-# TEMPLATE HTML DU DASHBOARD
-# ---------------------------
+# ---------------------------------------------------------
+#                     AUTH / SAAS
+# ---------------------------------------------------------
 
-TEMPLATE = """
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <title>Monitoring Cluster</title>
+def hash_password(pwd: str) -> str:
+    return hashlib.sha256(pwd.encode()).hexdigest()
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    body { font-family: sans-serif; background: #111; color: #eee; margin: 0; padding: 20px; }
-    h1 { text-align: center; }
-    h2 { margin-top: 40px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 8px; border-bottom: 1px solid #444; text-align: left; }
-    th { background: #222; }
-    tr:nth-child(even) { background: #181818; }
-    .up { color: #4caf50; }
-    .down { color: #f44336; }
-    canvas { background: #181818; margin-top: 10px; }
-  </style>
-</head>
-<body>
-  <h1>Monitoring Cluster - Dashboard</h1>
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
 
-  <h2>Latence dans le temps</h2>
-  <canvas id="latencyChart" width="400" height="150"></canvas>
+        conn = get_conn()
+        c = conn.cursor()
 
-  <h2>Statut UP/DOWN dans le temps</h2>
-  <canvas id="statusChart" width="400" height="150"></canvas>
+        try:
+            token = secrets.token_hex(32)
+            c.execute(
+                "INSERT INTO users (email, password, created_at, token) VALUES (?, ?, ?, ?)",
+                (email, hash_password(password), datetime.now().isoformat(), token)
+            )
+            conn.commit()
+        except Exception as e:
+            conn.close()
+            return f"Erreur inscription : {e}", 400
 
-  <h2>Disponibilité par site</h2>
-  <canvas id="availabilityChart" width="400" height="150"></canvas>
+        conn.close()
+        return redirect(url_for("login"))
 
-  <h2>Métriques</h2>
-  <table>
-    <tr>
-      <th>Site</th>
-      <th>Disponibilité (%)</th>
-      <th>Latence moyenne (ms)</th>
-      <th>Taux d’erreur (%)</th>
-      <th>Stabilité</th>
-    </tr>
-    {% for m in metrics %}
-    <tr>
-      <td>{{ m.site }}</td>
-      <td>{{ m.availability }}</td>
-      <td>{{ m.avg_latency }}</td>
-      <td>{{ m.error_rate }}</td>
-      <td>{{ m.stability }}</td>
-    </tr>
-    {% endfor %}
-  </table>
+    return render_template("signup.html")
 
-  <h2>Historique des événements</h2>
-  <table>
-    <tr>
-      <th>Timestamp</th>
-      <th>Site</th>
-      <th>Event</th>
-      <th>Status</th>
-      <th>Latence (ms)</th>
-      <th>Détails</th>
-    </tr>
-    {% for e in events %}
-    <tr>
-      <td>{{ e.timestamp }}</td>
-      <td>{{ e.site }}</td>
-      <td>{{ e.event }}</td>
-      <td class="{{ 'up' if e.status == 'UP' else 'down' if e.status == 'DOWN' else '' }}">
-        {{ e.status or '-' }}
-      </td>
-      <td>{{ e.latency if e.latency is not none else '-' }}</td>
-      <td>{{ e.details }}</td>
-    </tr>
-    {% endfor %}
-  </table>
 
-  <!-- Script des graphiques -->
-  <script>
-    const latencyData = {{ latency_data | safe }};
-    const statusData = {{ status_data | safe }};
-    const availabilityData = {{ availability_chart_data | safe }};
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
 
-    // Latence dans le temps
-    const latencyLabels = latencyData.map(e => e.timestamp);
-    const latencies = latencyData.map(e => e.latency);
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute("SELECT id, password, token FROM users WHERE email = ?", (email,))
+        row = c.fetchone()
+        conn.close()
 
-    const latencyCtx = document.getElementById('latencyChart').getContext('2d');
-    new Chart(latencyCtx, {
-      type: 'line',
-      data: {
-        labels: latencyLabels,
-        datasets: [{
-          label: 'Latence (ms)',
-          data: latencies,
-          borderColor: 'rgba(75, 192, 192, 1)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          borderWidth: 2,
-          tension: 0.3
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
+        if not row:
+            return "Utilisateur introuvable", 400
 
-    // Statut UP/DOWN dans le temps
-    const statusLabels = statusData.map(e => e.timestamp);
-    const statusValues = statusData.map(e => e.status_value);
+        user_id, pwd_hash, token = row
+        if hash_password(password) != pwd_hash:
+            return "Mot de passe incorrect", 400
 
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
-    new Chart(statusCtx, {
-      type: 'bar',
-      data: {
-        labels: statusLabels,
-        datasets: [{
-          label: 'Status (1 = UP, 0 = DOWN)',
-          data: statusValues,
-          backgroundColor: statusValues.map(v =>
-            v === 1 ? 'rgba(76, 175, 80, 0.7)' : 'rgba(244, 67, 54, 0.7)'
-          )
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true, max: 1 }
-        }
-      }
-    });
+        session["user_id"] = user_id
+        session["email"] = email
+        session["token"] = token
 
-    // Disponibilité par site
-    const availabilityLabels = availabilityData.map(e => e.site);
-    const availabilityValues = availabilityData.map(e => e.availability);
+        return redirect(url_for("overview"))
 
-    const availabilityCtx = document.getElementById('availabilityChart').getContext('2d');
-    new Chart(availabilityCtx, {
-      type: 'bar',
-      data: {
-        labels: availabilityLabels,
-        datasets: [{
-          label: 'Disponibilité (%)',
-          data: availabilityValues,
-          backgroundColor: 'rgba(33, 150, 243, 0.7)'
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true, max: 100 }
-        }
-      }
-    });
-  </script>
+    return render_template("login.html")
 
-</body>
-</html>
-"""
 
-# ---------------------------
-# ROUTES DE BASE
-# ---------------------------
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ---------------------------------------------------------
+#                     PAGES PRINCIPALES
+# ---------------------------------------------------------
 
 @app.route("/")
-def home():
-    return "Monitoring Cluster is running."
+def index():
+    return render_template("index.html")
 
-@app.route("/event", methods=["POST"])
-def event():
+
+@app.route("/overview")
+def overview():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    cluster = analyser_cluster(session["user_id"])
+    anomalies = detecter_anomalies()
+    sites = tester_tous_les_sites()
+
+    nb_sites = len(sites)
+    nb_up = sum(1 for s in sites if s["status"] == "UP")
+    nb_down = nb_sites - nb_up
+
+    return render_template(
+        "overview.html",
+        cluster=cluster,
+        anomalies=anomalies,
+        sites=sites,
+        nb_sites=nb_sites,
+        nb_up=nb_up,
+        nb_down=nb_down
+    )
+
+
+# ---------------------------------------------------------
+#                     STREAMING TEMPS RÉEL
+# ---------------------------------------------------------
+
+@app.route("/stream")
+def stream():
+    def event_stream():
+        while True:
+            sites = tester_tous_les_sites()
+            cluster = analyser_cluster(session.get("user_id"))
+            anomalies = detecter_anomalies()
+
+            data = {
+                "sites": sites,
+                "cluster": cluster,
+                "anomalies": anomalies
+            }
+
+            yield f"data: {json.dumps(data)}\n\n"
+            time.sleep(5)
+
+    return Response(event_stream(), mimetype="text/event-stream")
+
+
+# ---------------------------------------------------------
+#                     LOGS & HISTORIQUE
+# ---------------------------------------------------------
+
+@app.route("/logs")
+def logs_page():
+    logs = []
+
+    try:
+        with open("logs.jsonl", "r") as f:
+            for line in f:
+                logs.append(json.loads(line))
+    except File.FileNotFoundError:
+        pass
+
+    logs = sorted(logs, key=lambda x: x.get("timestamp", ""), reverse=True)
+
+    return render_template("logs.html", logs=logs)
+
+
+@app.route("/history")
+def history_page():
+    events = []
+
+    try:
+        with open("history.jsonl", "r") as f:
+            for line in f:
+                events.append(json.loads(line))
+    except FileNotFoundError:
+        pass
+
+    events = sorted(events, key=lambda x: x.get("timestamp", ""), reverse=True)
+
+    return render_template("history.html", events=events)
+
+
+# ---------------------------------------------------------
+#                     API JSON
+# ---------------------------------------------------------
+
+@app.route("/api/status")
+def api_status():
+    return jsonify(tester_tous_les_sites())
+
+
+@app.route("/api/history")
+def api_history():
+    return jsonify(charger_historique_pannes())
+
+
+@app.route("/api/logs")
+def api_logs():
+    return jsonify(get_logs())
+
+
+# ---------------------------------------------------------
+#                     API EVENTS (MANQUANTE)
+# ---------------------------------------------------------
+
+@app.route("/api/events")
+def api_events():
+    events = []
+
+    try:
+        with open("history.jsonl", "r") as f:
+            for line in f:
+                events.append(json.loads(line))
+    except FileNotFoundError:
+        pass
+
+    events = sorted(events, key=lambda x: x.get("timestamp", ""), reverse=True)
+    return jsonify(events)
+
+
+# ---------------------------------------------------------
+#                     API METRICS (MANQUANTE)
+# ---------------------------------------------------------
+
+@app.route("/api/metrics")
+def api_metrics():
+    metrics = []
+
+    try:
+        with open("agent_metrics.jsonl", "r") as f:
+            for line in f:
+                metrics.append(json.loads(line))
+    except FileNotFoundError:
+        pass
+
+    return jsonify(metrics)
+
+
+# ---------------------------------------------------------
+#                     AGENTS & CLUSTER
+# ---------------------------------------------------------
+
+@app.route("/api/agent", methods=["POST"])
+def api_agent():
     data = request.json
+    token = data.get("token")
 
-    conn = sqlite3.connect(DB_FILE)
+    if not token:
+        return {"error": "missing_token"}, 400
+
+    conn = get_conn()
     c = conn.cursor()
+    c.execute("SELECT id FROM users WHERE token = ?", (token,))
+    row = c.fetchone()
+
+    if not row:
+        conn.close()
+        return {"error": "invalid_token"}, 403
+
+    user_id = row[0]
+
+    name = data.get("name") or data.get("agent") or "agent"
+    ip = data.get("ip", "0.0.0.0")
+    version = data.get("version", "1.0")
 
     c.execute("""
-        INSERT INTO events (timestamp, site, event, status, latency, details)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (
-        data.get("timestamp"),
-        data.get("site"),
-        data.get("event"),
-        data.get("status"),
-        data.get("latency"),
-        json.dumps(data.get("details"))
-    ))
+        INSERT INTO agents (name, ip, version, owner_id, created_at)
+        VALUES (?, ?, ?, ?, ?)
+    """, (name, ip, version, user_id, datetime.now().isoformat()))
 
     conn.commit()
     conn.close()
 
     return {"status": "ok"}
 
-# ---------------------------
-# API SITES
-# ---------------------------
 
-@app.route("/api/sites", methods=["GET"])
-def api_get_sites():
-    conn = sqlite3.connect(DB_FILE)
+@app.route("/cluster")
+def cluster():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    data = analyser_cluster(session["user_id"])
+    return render_template("cluster.html", data=data)
+
+
+# ---------------------------------------------------------
+#                     BALANCING & RÉSEAU
+# ---------------------------------------------------------
+
+@app.route("/balancing")
+def balancing():
+    df = pd.read_csv(FICHIER_LOG)
+    all_sites = sorted(df["site"].unique())
+    assignments = assign_sites_to_agents(all_sites)
+    return render_template("balancing.html", assignments=assignments)
+
+
+@app.route("/network")
+def network():
+    data = analyser_reseau()
+    return render_template("network.html", data=data)
+
+
+# ---------------------------------------------------------
+#                    METRICS (AGENTS)
+# ---------------------------------------------------------
+
+@app.route('/metrics', methods=['POST'])
+def metrics():
+    data = request.get_json(silent=True)
+
+    if data is None:
+        return jsonify({"error": "Format JSON invalide"}), 400
+
+    token = data.get("token")
+
+    if not token:
+        return jsonify({"error": "missing_token"}), 400
+
+    conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT url FROM sites")
-    sites = [row[0] for row in c.fetchall()]
+    c.execute("SELECT id, email FROM users WHERE token = ?", (token,))
+    row = c.fetchone()
     conn.close()
-    return jsonify(sites)
 
-@app.route("/api/sites", methods=["POST"])
-def api_add_site():
-    data = request.json
-    if "url" not in data:
-        return {"error": "Missing 'url'"}, 400
+    if not row:
+        return jsonify({"error": "invalid_token"}), 403
 
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
+    owner_id, owner_email = row
+    data["owner_id"] = owner_id
+
+    with open("agent_metrics.jsonl", "a") as f:
+        f.write(json.dumps(data) + "\n")
+
     try:
-        c.execute("INSERT INTO sites (url) VALUES (?)", (data["url"],))
-        conn.commit()
-    except sqlite3.IntegrityError:
-        return {"error": "Site already exists"}, 400
-    finally:
-        conn.close()
+        cpu = float(data.get("cpu", 0))
+        ram = float(data.get("ram", 0))
+        agent_name = data.get("agent") or data.get("name") or "agent"
 
-    return {"status": "added", "url": data["url"]}
+        if cpu > 80:
+            alert_all(f"🔥 CPU élevé sur {agent_name} : {cpu}%", email=owner_email)
 
-@app.route("/api/sites/<path:url>", methods=["DELETE"])
-def api_delete_site(url):
-    conn = sqlite3.connect(DB_FILE)
+        if ram > 90:
+            alert_all(f"💥 RAM saturée sur {agent_name} : {ram}%", email=owner_email)
+
+        results = data.get("results", [])
+        if isinstance(results, list):
+            down_sites = [r for r in results if r.get("status") == "DOWN"]
+            for r in down_sites:
+                site_url = r.get("site")
+                alert_all(f"⚠️ Site DOWN : {site_url} (agent {agent_name})", email=owner_email)
+
+    except Exception as e:
+        print("DEBUG: Erreur alertes metrics :", e)
+
+    return jsonify({"status": "ok"}), 200
+
+
+# ---------------------------------------------------------
+#                     BACKGROUND TASKS
+# ---------------------------------------------------------
+
+def boucle_ping():
+    while True:
+        ping_agents()
+        time.sleep(10)
+
+threading.Thread(target=boucle_ping, daemon=True).start()
+
+
+def boucle_autoscaling():
+    while True:
+        if "user_id" in session:
+            autoscaling(session["user_id"])
+        time.sleep(10)
+
+threading.Thread(target=boucle_autoscaling, daemon=True).start()
+
+
+# ---------------------------------------------------------
+#                     MES AGENTS / SITES / ALERTES
+# ---------------------------------------------------------
+
+@app.route("/my-agents")
+def my_agents():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    agents = get_agents(session["user_id"])
+    return render_template("my_agents.html", agents=agents)
+
+
+@app.route("/my-sites", methods=["GET", "POST"])
+def my_sites():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        url = request.form.get("url")
+        if url:
+            add_site(url, session["user_id"])
+
+    sites = get_sites(session["user_id"])
+    return render_template("my_sites.html", sites=sites)
+
+
+@app.route("/my-alerts")
+def my_alerts():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    alerts = get_alerts(session["user_id"])
+    return render_template("my_alerts.html", alerts=alerts)
+
+
+# ---------------------------------------------------------
+#                     API TOKEN
+# ---------------------------------------------------------
+
+@app.route("/api/token")
+def api_token():
+    if "user_id" not in session:
+        return {"error": "not_authenticated"}, 403
+
+    conn = get_conn()
     c = conn.cursor()
-    c.execute("DELETE FROM sites WHERE url = ?", (url,))
-    conn.commit()
-    conn.close()
-    return {"status": "deleted", "url": url}
-
-# ---------------------------
-# API METRICS
-# ---------------------------
-
-@app.route("/api/metrics/<path:url>", methods=["GET"])
-def api_metrics(url):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-
-    c.execute("""
-        SELECT status, latency FROM events
-        WHERE site = ?
-    """, (url,))
-    rows = c.fetchall()
-
+    c.execute("SELECT token FROM users WHERE id = ?", (session["user_id"],))
+    row = c.fetchone()
     conn.close()
 
-    if not rows:
-        return jsonify({
-            "site": url,
-            "availability": 0,
-            "avg_latency": None,
-            "error_rate": 0,
-            "stability": "No data"
-        })
+    if not row:
+        return {"error": "no_token"}, 400
 
-    total = len(rows)
-    up = sum(1 for r in rows if r[0] == "UP")
-    down = sum(1 for r in rows if r[0] == "DOWN")
+    token = row[0]
+    return {"token": token}
 
-    latencies = [r[1] for r in rows if r[1] is not None]
-    avg_latency = sum(latencies) / len(latencies) if latencies else None
 
-    availability = round((up / total) * 100, 2)
-    error_rate = round((down / total) * 100, 2)
+# ---------------------------------------------------------
+#                     METRICS HISTORY
+# ---------------------------------------------------------
 
-    last10 = rows[-10:]
-    up10 = sum(1 for r in last10 if r[0] == "UP")
-    down10 = sum(1 for r in last10 if r[0] == "DOWN")
+@app.route("/metrics-history")
+def metrics_history():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
 
-    if up10 >= 7:
-        stability = "Stable"
-    elif down10 >= 5:
-        stability = "Unstable"
-    else:
-        stability = "Fluctuating"
+    metrics = charger_metrics()
 
-    return jsonify({
-        "site": url,
-        "availability": availability,
-        "avg_latency": avg_latency,
-        "error_rate": error_rate,
-        "stability": stability
-    })
+    latence = extraire_latence_moyenne(metrics)
+    dispo = extraire_disponibilite(metrics)
+    uptime = extraire_uptime(metrics)
+    anomalies = extraire_anomalies(metrics)
 
-# ---------------------------
-# DASHBOARD
-# ---------------------------
-
-@app.route("/dashboard")
-def dashboard():
-
-    # Données de test pour les graphiques
-    latency_data = [
-        {"timestamp": "2026-07-02 10:00", "latency": 120},
-        {"timestamp": "2026-07-02 10:05", "latency": 180},
-        {"timestamp": "2026-07-02 10:10", "latency": 90},
-        {"timestamp": "2026-07-02 10:15", "latency": 200},
-        {"timestamp": "2026-07-02 10:20", "latency": 150}
-    ]
-
-    status_data = [
-        {"timestamp": "2026-07-02 10:00", "status_value": 1},
-        {"timestamp": "2026-07-02 10:05", "status_value": 0},
-        {"timestamp": "2026-07-02 10:10", "status_value": 1},
-        {"timestamp": "2026-07-02 10:15", "status_value": 1},
-        {"timestamp": "2026-07-02 10:20", "status_value": 0}
-    ]
-
-    availability_chart_data = [
-        {"site": "siteA.com", "availability": 92},
-        {"site": "siteB.com", "availability": 75},
-        {"site": "siteC.com", "availability": 100}
-    ]
-
-    # Données de test pour le tableau des événements
-    events = [
-        {
-            "timestamp": "2026-07-02 10:00",
-            "site": "siteA.com",
-            "event": "TEST",
-            "status": "UP",
-            "latency": 120,
-            "details": "agent: test"
-        },
-        {
-            "timestamp": "2026-07-02 10:05",
-            "site": "siteA.com",
-            "event": "TEST",
-            "status": "DOWN",
-            "latency": 0,
-            "details": "agent: test"
-        }
-    ]
-
-    # Données de test pour les métriques
-    metrics = [
-        {
-            "site": "siteA.com",
-            "availability": 92,
-            "avg_latency": 148,
-            "error_rate": 20,
-            "stability": "Stable"
-        },
-        {
-            "site": "siteB.com",
-            "availability": 75,
-            "avg_latency": 200,
-            "error_rate": 40,
-            "stability": "Fluctuating"
-        }
-    ]
-
-    return render_template_string(
-        TEMPLATE,
-        events=events,
+    return render_template(
+        "metrics_history.html",
         metrics=metrics,
-        latency_data=json.dumps(latency_data),
-        status_data=json.dumps(status_data),
-        availability_chart_data=json.dumps(availability_chart_data)
+        latence=latence,
+        dispo=dispo,
+        uptime=uptime,
+        anomalies=anomalies
     )
 
-# ---------------------------
-# LANCEMENT SERVEUR
-# ---------------------------
+
+# ---------------------------------------------------------
+#                     STRIPE CHECKOUT
+# ---------------------------------------------------------
+
+@app.route("/create-checkout-session", methods=["POST"])
+def create_checkout_session():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    plan = request.form.get("plan")
+
+    price_ids = {
+        "starter": "price_xxx",
+        "pro": "price_yyy",
+        "business": "price_zzz",
+        "enterprise": "price_aaa"
+    }
+
+    session_stripe = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        mode="subscription",
+        line_items=[{
+            "price": price_ids[plan],
+            "quantity": 1
+        }],
+        success_url="http://127.0.0.1:5000/success?plan=" + plan,
+        cancel_url="http://127.0.0.1:5000/pricing"
+    )
+
+    return redirect(session_stripe.url)
+
+
+@app.route("/success")
+def success():
+    plan = request.args.get("plan")
+
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, session["user_id"]))
+    conn.commit()
+    conn.close()
+
+    return render_template("success.html", plan=plan)
+
+
+# ---------------------------------------------------------
+#                     LANCEMENT
+# ---------------------------------------------------------
 
 if __name__ == "__main__":
+    init_db()
     app.run(host="0.0.0.0", port=8080)
