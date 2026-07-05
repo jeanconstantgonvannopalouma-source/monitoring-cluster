@@ -166,28 +166,36 @@ def categorie_page():
 #                     PAGES PRINCIPALES
 # ---------------------------------------------------------
 
-@app.route("/overview")
-def overview():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
+@app.route("/api/overview")
+def api_overview():
+    # Charger les sites et agents
+    sites = get_sites()
+    agents = get_agents()
 
-    cluster = analyser_cluster()
-    sites = tester_tous_les_sites()
-    anomalies = detecter_anomalies(sites)
+    # Extraire les URLs des sites
+    urls = [s["url"] for s in sites]
 
-    nb_sites = len(sites)
-    nb_up = sum(1 for s in sites if s.get("status") in (200, "UP"))
-    nb_down = nb_sites - nb_up
+    # Monitoring complet
+    results = tester_tous_les_sites(urls)
 
-    return render_template(
-        "overview.html",
-        cluster=cluster,
-        anomalies=anomalies,
-        sites=sites,
-        nb_sites=nb_sites,
-        nb_up=nb_up,
-        nb_down=nb_down
-    )
+    # Analyse globale
+    anomalies = detecter_anomalies(results)
+    sre = analyser_performance_globale(results)
+    network = analyser_reseau(results, agents)
+    prediction = predire_panne(results)
+    comparaison = comparer_sites(results)
+
+    # Réponse JSON complète
+    return jsonify({
+        "sites": sites,
+        "agents": agents,
+        "results": results,
+        "anomalies": anomalies,
+        "sre": sre,
+        "network": network,
+        "prediction": prediction,
+        "comparaison": comparaison
+    })
 
 # ---------------------------------------------------------
 # STREAMING TEMPS RÉEL
