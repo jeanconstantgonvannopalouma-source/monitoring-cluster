@@ -16,7 +16,7 @@ FICHIER_LOG = os.path.join(DOSSIER_DATA, "logs.csv")
 # === Email (⚠️ mot de passe DOIT être en variable d’environnement) ===
 EMAIL_FROM = "jeanconstantgonvannopalouma@gmail.com"
 EMAIL_TO = "jeanconstantgonvannopalouma@gmail.com"
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")  # ⚠️ sécurité
+EMAIL_PASSWORD = os.getenv("xhln kuhr ecbe xell")  # ⚠️ sécurité
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
