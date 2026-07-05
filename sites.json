@@ -1,38 +1,54 @@
-[
-  {
-    "url": "https://google.com",
-    "categorie": "Web",
-    "tags": ["public", "search"],
-    "added_at": "2026-01-01T00:00:00",
-    "status": "UNKNOWN",
-    "last_latency": null,
-    "last_code": null,
-    "last_agent": null,
-    "anomalies": 0,
-    "disponibilite": 100.0
-  },
-  {
-    "url": "https://github.com",
-    "categorie": "Web",
-    "tags": ["code", "repository"],
-    "added_at": "2026-01-01T00:00:00",
-    "status": "UNKNOWN",
-    "last_latency": null,
-    "last_code": null,
-    "last_agent": null,
-    "anomalies": 0,
-    "disponibilite": 100.0
-  },
-  {
-    "url": "https://api.monservice.com",
-    "categorie": "API",
-    "tags": ["backend", "critical"],
-    "added_at": "2026-01-01T00:00:00",
-    "status": "UNKNOWN",
-    "last_latency": null,
-    "last_code": null,
-    "last_agent": null,
-    "anomalies": 0,
-    "disponibilite": 100.0
-  }
-]
+import json
+import os
+from datetime import datetime
+from config import FICHIER_SITES
+
+def charger_sites():
+    if not os.path.exists(FICHIER_SITES):
+        return []
+
+    with open(FICHIER_SITES, "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return []
+
+def sauvegarder_sites(sites):
+    with open(FICHIER_SITES, "w", encoding="utf-8") as f:
+        json.dump(sites, f, indent=4)
+
+def get_sites():
+    return charger_sites()
+
+def add_site(url, categorie="general", tags=None):
+    if tags is None:
+        tags = []
+
+    sites = charger_sites()
+
+    # éviter les doublons
+    if any(s["url"] == url for s in sites):
+        return {"error": "Site déjà existant"}
+
+    nouveau_site = {
+        "url": url,
+        "categorie": categorie,
+        "tags": tags,
+        "added_at": datetime.utcnow().isoformat(),
+        "status": "UNKNOWN",
+        "last_latency": None,
+        "last_code": None,
+        "last_agent": None,
+        "anomalies": 0,
+        "disponibilite": 100.0
+    }
+
+    sites.append(nouveau_site)
+    sauvegarder_sites(sites)
+
+    return nouveau_site
+
+def remove_site(url):
+    sites = charger_sites()
+    sites = [s for s in sites if s["url"] != url]
+    sauvegarder_sites(sites)
