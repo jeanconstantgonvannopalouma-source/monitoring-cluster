@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Historique des métriques</h3>
+
+<!-- Résumé global -->
+<div class="mdl-grid">
+
+    <!-- Latence moyenne -->
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Latence moyenne</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 28px; font-weight: bold; color: #3F51B5;">
+                    {{ latence }} ms
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disponibilité -->
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Disponibilité</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 28px; font-weight: bold; color: #4CAF50;">
+                    {{ dispo }} %
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Uptime -->
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Uptime</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 28px; font-weight: bold; color: #009688;">
+                    {{ uptime }} %
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Anomalies -->
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Anomalies</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 28px; font-weight: bold; color: #F44336;">
+                    {{ anomalies|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Graphiques -->
+<h4 class="mdl-typography--title">Évolution des métriques</h4>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="mdl-grid">
+
+    <!-- Graphique latence -->
+    <div class="mdl-cell mdl-cell--6-col">
+        <div class="mdl-card mdl-shadow--2dp" style="padding: 20px;">
+            <h5>Latence dans le temps</h5>
+            <canvas id="latencyChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Graphique disponibilité -->
+    <div class="mdl-cell mdl-cell--6-col">
+        <div class="mdl-card mdl-shadow--2dp" style="padding: 20px;">
+            <h5>Disponibilité dans le temps</h5>
+            <canvas id="dispoChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const metrics = {{ metrics | tojson }};
+
+    const timestamps = metrics.map(m => m.timestamp);
+    const latencies = metrics.map(m => m.latency);
+    const dispos = metrics.map(m => m.dispo);
+
+    // Latence
+    new Chart(document.getElementById('latencyChart'), {
+        type: 'line',
+        data: {
+            labels: timestamps,
+            datasets: [{
+                label: 'Latence (ms)',
+                data: latencies,
+                borderColor: '#3F51B5',
+                fill: false,
+                tension: 0.2
+            }]
+        }
+    });
+
+    // Disponibilité
+    new Chart(document.getElementById('dispoChart'), {
+        type: 'line',
+        data: {
+            labels: timestamps,
+            datasets: [{
+                label: 'Disponibilité (%)',
+                data: dispos,
+                borderColor: '#4CAF50',
+                fill: false,
+                tension: 0.2
+            }]
+        }
+    });
+</script>
+
+{% endblock %}
