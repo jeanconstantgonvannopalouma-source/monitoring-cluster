@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Vue globale du cluster</h3>
+
+<!-- Cards principales -->
+<div class="mdl-grid">
+
+    <!-- Sites UP -->
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Sites UP</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #4CAF50;">
+                    {{ nb_up }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sites DOWN -->
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Sites DOWN</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #F44336;">
+                    {{ nb_down }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nombre d'agents -->
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Agents actifs</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #3F51B5;">
+                    {{ cluster.agents|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Anomalies -->
+    <div class="mdl-cell mdl-cell--3-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Anomalies</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #FF9800;">
+                    {{ anomalies|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Tableau des sites -->
+<h4 class="mdl-typography--title">État des sites</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Site</th>
+            <th>Statut</th>
+            <th>Latence</th>
+            <th>Agent</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for site in sites %}
+        <tr>
+            <td class="mdl-data-table__cell--non-numeric">{{ site.site }}</td>
+
+            <td>
+                {% if site.status == "UP" or site.status == 200 %}
+                    <span style="color: #4CAF50; font-weight: bold;">UP</span>
+                {% else %}
+                    <span style="color: #F44336; font-weight: bold;">DOWN</span>
+                {% endif %}
+            </td>
+
+            <td>{{ site.latency }} ms</td>
+            <td>{{ site.agent }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Tableau des anomalies -->
+<h4 class="mdl-typography--title" style="margin-top: 40px;">Anomalies détectées</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Type</th>
+            <th>Site</th>
+            <th>Agent</th>
+            <th>Criticité</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in anomalies %}
+        <tr>
+            <td class="mdl-data-table__cell--non-numeric">{{ a.type }}</td>
+            <td>{{ a.site }}</td>
+            <td>{{ a.agent }}</td>
+            <td>
+                {% if a.level == "HIGH" %}
+                    <span style="color: #F44336; font-weight: bold;">Critique</span>
+                {% elif a.level == "MEDIUM" %}
+                    <span style="color: #FF9800; font-weight: bold;">Moyenne</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">Faible</span>
+                {% endif %}
+            </td>
+            <td>{{ a.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
