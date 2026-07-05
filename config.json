@@ -1,51 +1,63 @@
 {
-    "sites": [
-        "https://google.com",
-        "https://github.com",
-        "https://api.monservice.com"
-    ],
+  "server_url": "http://localhost:5000",
+  "token": "CHANGE_ME_TOKEN",
 
-    "categories": {
-        "https://google.com": "Web",
-        "https://github.com": "Web",
-        "https://api.monservice.com": "API"
+  "sites": [
+    {
+      "url": "https://google.com",
+      "categorie": "Web",
+      "tags": ["public", "search"]
     },
-
-    "agents": {
-        "Agent-1": {
-            "ip": "192.168.1.10",
-            "version": "1.0"
-            {
-         "agent_name": "Agent-1",
-         "version": "1.0",
-         "update_url": "http://TON_SERVEUR/update/Agent-1"
-               }
-
-        },
-          "Agent-2":{
-         "agent_name": "Agent-1",
-         "version": "1.0",
-         "update_url": "http://TON_SERVEUR/update/Agent-1"}
-
- 
-          { "ip": "192.168.1.11",
-            "version": "1.0"
-        }
+    {
+      "url": "https://github.com",
+      "categorie": "Web",
+      "tags": ["code", "repository"]
     },
-
-    "monitoring": {
-        "interval": 60,
-        "timeout": 5
-    },
-
-    "anomalies": {
-        "latency_factor": 2.0,
-        "variation_factor": 1.5
-    },
-
-    "telegram": {
-        "enabled": true,
-        "chat_id": "123456789",
-        "token":"112b68f8176110232ddbd59edf241921182f236f294d66ed2567e39aa7eb39dd"
+    {
+      "url": "https://api.monservice.com",
+      "categorie": "API",
+      "tags": ["backend", "critical"]
     }
+  ],
+
+  "agents": [
+    {
+      "id": "Agent-1",
+      "ip": "192.168.1.10",
+      "version": "1.0",
+      "update_url": "http://localhost:5000/update/Agent-1"
+    },
+    {
+      "id": "Agent-2",
+      "ip": "192.168.1.11",
+      "version": "1.0",
+      "update_url": "http://localhost:5000/update/Agent-2"
+    }
+  ],
+
+  "monitoring": {
+    "interval": 60,
+    "timeout": 5
+  },
+
+  "autoscaling": {
+    "enabled": true,
+    "interval_min": 10,
+    "interval_max": 120
+  },
+
+  "anomalies": {
+    "latency_factor": 2.0,
+    "variation_factor": 1.5,
+    "latency_threshold": 1.0,
+    "dns_threshold": 0.5,
+    "size_threshold": 2000000,
+    "unstable_threshold": 0.3
+  },
+
+  "telegram": {
+    "enabled": true,
+    "chat_id": "123456789",
+    "token": "112b68f8176110232ddbd59edf241921182f236f294d66ed2567e39aa7eb39dd"
+  }
 }
