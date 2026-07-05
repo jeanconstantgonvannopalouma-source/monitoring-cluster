@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Analyse réseau du cluster</h3>
+
+<!-- Résumé global -->
+<div class="mdl-grid">
+
+    <!-- Latence moyenne réseau -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Latence moyenne</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 28px; font-weight: bold; color: #3F51B5;">
+                    {{ data.latence_moyenne }} ms
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agents en surcharge réseau -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Agents en surcharge</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 28px; font-weight: bold; color: #F44336;">
+                    {{ data.agents_surcharge|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sites lents -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Sites lents</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 28px; font-weight: bold; color: #FF9800;">
+                    {{ data.sites_lents|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Heatmap réseau -->
+<h4 class="mdl-typography--title">Heatmap réseau</h4>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="mdl-card mdl-shadow--2dp" style="padding: 20px;">
+    <canvas id="heatmapChart"></canvas>
+</div>
+
+<script>
+    const networkData = {{ data | tojson }};
+
+    const labels = networkData.matrix.map(row => row.agent);
+    const sites = networkData.matrix[0].latences.map(l => l.site);
+
+    const datasets = networkData.matrix.map((row, idx) => ({
+        label: row.agent,
+        data: row.latences.map(l => l.value),
+        backgroundColor: row.latences.map(l => {
+            if (l.value > 1000) return "rgba(244,67,54,0.8)";
+            if (l.value > 500) return "rgba(255,152,0,0.8)";
+            return "rgba(76,175,80,0.8)";
+        })
+    }));
+
+    new Chart(document.getElementById('heatmapChart'), {
+        type: 'bar',
+        data: {
+            labels: sites,
+            datasets: datasets
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: { position: 'right' }
+            },
+            scales: {
+                x: { title: { display: true, text: "Latence (ms)" } },
+                y: { title: { display: true, text: "Sites" } }
+            }
+        }
+    });
+</script>
+
+<!-- Tableau des agents -->
+<h4 class="mdl-typography--title" style="margin-top: 40px;">Agents réseau</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Agent</th>
+            <th>Latence moyenne</th>
+            <th>Sites lents</th>
+            <th>Statut réseau</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for agent in data.agents %}
+        <tr>
+            <td class="mdl-data-table__cell--non-numeric">{{ agent.name }}</td>
+
+            <td>
+                {% if agent.latence_moyenne > 1000 %}
+                    <span style="color: #F44336; font-weight: bold;">{{ agent.latence_moyenne }} ms</span>
+                {% elif agent.latence_moyenne > 500 %}
+                    <span style="color: #FF9800; font-weight: bold;">{{ agent.latence_moyenne }} ms</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">{{ agent.latence_moyenne }} ms</span>
+                {% endif %}
+            </td>
+
+            <td>{{ agent.sites_lents|length }}</td>
+
+            <td>
+                {% if agent.status == "OK" %}
+                    <span style="color: #4CAF50; font-weight: bold;">OK</span>
+                {% else %}
+                    <span style="color: #F44336; font-weight: bold;">Problème</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
