@@ -20,7 +20,6 @@ from flask import (
 #   IMPORTS INTERNES
 # ==========================
 
-# Base de données
 from db import init_db, get_conn
 
 import hashlib
@@ -66,7 +65,6 @@ app.secret_key = "change_this_secret_key"
 def hash_password(pwd: str) -> str:
     return hashlib.sha256(pwd.encode()).hexdigest()
 
-
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -91,7 +89,6 @@ def signup():
         return redirect(url_for("login"))
 
     return render_template("signup.html")
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -119,7 +116,6 @@ def login():
         return redirect(url_for("index"))
 
     return render_template("login.html")
-
 
 @app.route("/logout")
 def logout():
@@ -180,7 +176,6 @@ def api_overview():
     agents = get_agents()
 
     urls = [s["url"] for s in sites]
-
     results = tester_tous_les_sites(urls)
 
     anomalies = detecter_anomalies(results)
@@ -208,7 +203,8 @@ def api_overview():
 def stream():
     def event_stream():
         while True:
-            sites_results = tester_tous_les_sites([s["url"] for s in get_sites()])
+            urls = [s["url"] for s in get_sites()]
+            sites_results = tester_tous_les_sites(urls)
             cluster = analyser_cluster()
             anomalies = detecter_anomalies(sites_results)
 
@@ -242,7 +238,6 @@ def logs_page():
 
     return render_template("logs.html", logs=logs)
 
-
 @app.route("/history")
 def history_page():
     events = []
@@ -264,15 +259,12 @@ def history_page():
 
 @app.route("/api/status")
 def api_status():
-    sites = get_sites()
-    urls = [s["url"] for s in sites]
+    urls = [s["url"] for s in get_sites()]
     return jsonify(tester_tous_les_sites(urls))
-
 
 @app.route("/api/history")
 def api_history():
     return jsonify(charger_historique_pannes())
-
 
 @app.route("/api/logs")
 def api_logs():
@@ -350,7 +342,6 @@ def api_agent():
 
     return {"status": "ok"}
 
-
 @app.route("/cluster")
 def cluster():
     if "user_id" not in session:
@@ -371,11 +362,12 @@ def balancing():
     assignments = assign_sites_to_agents(all_sites, agents)
     return render_template("balancing.html", assignments=assignments)
 
-
 @app.route("/network")
 def network():
-    # version simple : analyse globale sans paramètres
-    data = analyser_reseau()
+    urls = [s["url"] for s in get_sites()]
+    results = tester_tous_les_sites(urls)
+    agents = get_agents()
+    data = analyser_reseau(results, agents)
     return render_template("network.html", data=data)
 
 # ==========================
@@ -401,7 +393,7 @@ def metrics():
     conn.close()
 
     if not row:
-        return jsonify({"error": "invalid_token"}), 403
+        return jsonify({"error": "invalid_token"}, 403)
 
     owner_id, owner_email = row
     data["owner_id"] = owner_id
@@ -443,7 +435,6 @@ def boucle_ping():
 
 threading.Thread(target=boucle_ping, daemon=True).start()
 
-
 def boucle_autoscaling():
     while True:
         cluster_info = analyser_cluster()
@@ -464,7 +455,6 @@ def my_agents():
     agents = get_agents()
     return render_template("my_agents.html", agents=agents)
 
-
 @app.route("/my-sites", methods=["GET", "POST"])
 def my_sites():
     if "user_id" not in session:
@@ -477,7 +467,6 @@ def my_sites():
 
     sites = get_sites()
     return render_template("my_sites.html", sites=sites)
-
 
 @app.route("/my-alerts")
 def my_alerts():
