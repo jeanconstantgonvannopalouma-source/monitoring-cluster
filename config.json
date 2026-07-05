@@ -46,6 +46,6 @@
     "telegram": {
         "enabled": true,
         "chat_id": "123456789",
-        "token": "TON_TOKEN"
+        "token":"112b68f8176110232ddbd59edf241921182f236f294d66ed2567e39aa7eb39dd"
     }
 }
