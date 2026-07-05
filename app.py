@@ -116,8 +116,94 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+############################################
+# ROUTES HTML – Dashboard
+############################################
 
+@app.route("/")
+def index():
+    return render_template("IndexHTML.html")
 
+@app.route("/agents")
+def agents_page():
+    return render_template("AgentHTML.html")
+
+@app.route("/anomalies")
+def anomalies_page():
+    return render_template("AnomalieHTML.html")
+
+@app.route("/balancing")
+def balancing_page():
+    return render_template("BalancingHTML.html")
+
+@app.route("/comparaison")
+def comparaison_page():
+    return render_template("ComparaisonHTML.html")
+
+@app.route("/config")
+def config_page():
+    return render_template("ConfigHTML.html")
+
+@app.route("/graph")
+def graph_page():
+    return render_template("GraphHTML.html")
+@app.route("/heatmap")
+def heatmap_page():
+    return render_template("HeatMapHTML.html")
+
+@app.route("/historique")
+def historique_page():
+    return render_template("HistoriqueHTML.html")
+
+@app.route("/categorie")
+def categorie_page():
+    return render_template("CatégorieHTML.html")
+############################################
+# ENDPOINTS JSON – API du cluster
+############################################
+
+@app.route("/api/sites")
+def api_sites():
+    return jsonify(get_sites())
+
+@app.route("/api/agents")
+def api_agents():
+    return jsonify(get_agents())
+
+@app.route("/api/logs")
+def api_logs():
+    return jsonify(get_logs())
+
+@app.route("/api/analyse_cluster")
+def api_analyse_cluster():
+    return jsonify(analyser_cluster())
+
+@app.route("/api/anomalies")
+def api_anomalies():
+    return jsonify(detecter_anomalies())
+
+@app.route("/api/predict")
+def api_predict():
+    return jsonify(predire_panne())
+@app.route("/api/performance")
+def api_performance():
+    return jsonify(analyser_performance_globale())
+
+@app.route("/api/comparaison")
+def api_comparaison():
+    return jsonify(comparer_sites())
+
+@app.route("/api/reseau")
+def api_reseau():
+    return jsonify(analyser_reseau())
+
+@app.route("/api/monitor")
+def api_monitor():
+    return jsonify(tester_tous_les_sites())
+
+@app.route("/api/alerts")
+def api_alerts():
+    return jsonify(get_alerts())
 # ---------------------------------------------------------
 #                     PAGES PRINCIPALES
 # ---------------------------------------------------------
