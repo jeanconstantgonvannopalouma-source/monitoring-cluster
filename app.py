@@ -116,10 +116,12 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
 ############################################
 # ROUTES HTML – Dashboard
 ############################################
 
+# ⭐ Correction : UNE SEULE route "/" (l'autre supprimée)
 @app.route("/")
 def index():
     return render_template("IndexHTML.html")
@@ -147,6 +149,7 @@ def config_page():
 @app.route("/graph")
 def graph_page():
     return render_template("GraphHTML.html")
+
 @app.route("/heatmap")
 def heatmap_page():
     return render_template("HeatMapHTML.html")
@@ -163,17 +166,11 @@ def categorie_page():
 #                     PAGES PRINCIPALES
 # ---------------------------------------------------------
 
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-
 @app.route("/overview")
 def overview():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    # nos modules simples ne gèrent pas user_id → cluster global
     cluster = analyser_cluster()
     sites = tester_tous_les_sites()
     anomalies = detecter_anomalies(sites)
@@ -192,9 +189,8 @@ def overview():
         nb_down=nb_down
     )
 
-
 # ---------------------------------------------------------
-#                     STREAMING TEMPS RÉEL
+# STREAMING TEMPS RÉEL
 # ---------------------------------------------------------
 
 @app.route("/stream")
@@ -216,9 +212,8 @@ def stream():
 
     return Response(event_stream(), mimetype="text/event-stream")
 
-
 # ---------------------------------------------------------
-#                     LOGS & HISTORIQUE
+# LOGS & HISTORIQUE
 # ---------------------------------------------------------
 
 @app.route("/logs")
@@ -252,9 +247,8 @@ def history_page():
 
     return render_template("history.html", events=events)
 
-
 # ---------------------------------------------------------
-#                     API JSON
+# API JSON
 # ---------------------------------------------------------
 
 @app.route("/api/status")
@@ -271,9 +265,8 @@ def api_history():
 def api_logs():
     return jsonify(get_logs())
 
-
 # ---------------------------------------------------------
-#                     API EVENTS
+# API EVENTS
 # ---------------------------------------------------------
 
 @app.route("/api/events")
@@ -290,9 +283,8 @@ def api_events():
     events = sorted(events, key=lambda x: x.get("timestamp", ""), reverse=True)
     return jsonify(events)
 
-
 # ---------------------------------------------------------
-#                     API METRICS
+# API METRICS
 # ---------------------------------------------------------
 
 @app.route("/api/metrics")
@@ -308,9 +300,8 @@ def api_metrics():
 
     return jsonify(metrics)
 
-
 # ---------------------------------------------------------
-#                     AGENTS & CLUSTER
+# AGENTS & CLUSTER
 # ---------------------------------------------------------
 
 @app.route("/api/agent", methods=["POST"])
@@ -346,7 +337,6 @@ def api_agent():
 
     return {"status": "ok"}
 
-
 @app.route("/cluster")
 def cluster():
     if "user_id" not in session:
@@ -355,9 +345,8 @@ def cluster():
     data = analyser_cluster()
     return render_template("cluster.html", data=data)
 
-
 # ---------------------------------------------------------
-#                     BALANCING & RÉSEAU
+# BALANCING & RÉSEAU
 # ---------------------------------------------------------
 
 @app.route("/balancing")
@@ -368,15 +357,13 @@ def balancing():
     assignments = assign_sites_to_agents(all_sites, agents)
     return render_template("balancing.html", assignments=assignments)
 
-
 @app.route("/network")
 def network():
     data = analyser_reseau()
     return render_template("network.html", data=data)
 
-
 # ---------------------------------------------------------
-#                    METRICS (AGENTS)
+# METRICS (AGENTS)
 # ---------------------------------------------------------
 
 @app.route('/metrics', methods=['POST'])
@@ -429,9 +416,8 @@ def metrics():
 
     return jsonify({"status": "ok"}), 200
 
-
 # ---------------------------------------------------------
-#                     BACKGROUND TASKS
+# BACKGROUND TASKS
 # ---------------------------------------------------------
 
 def boucle_ping():
@@ -450,9 +436,8 @@ def boucle_autoscaling():
 
 threading.Thread(target=boucle_autoscaling, daemon=True).start()
 
-
 # ---------------------------------------------------------
-#                     MES AGENTS / SITES / ALERTES
+# MES AGENTS / SITES / ALERTES
 # ---------------------------------------------------------
 
 @app.route("/my-agents")
@@ -486,9 +471,8 @@ def my_alerts():
     alerts = get_alerts()
     return render_template("my_alerts.html", alerts=alerts)
 
-
 # ---------------------------------------------------------
-#                     API TOKEN
+# API TOKEN
 # ---------------------------------------------------------
 
 @app.route("/api/token")
@@ -508,9 +492,8 @@ def api_token():
     token = row[0]
     return {"token": token}
 
-
 # ---------------------------------------------------------
-#                     METRICS HISTORY
+# METRICS HISTORY
 # ---------------------------------------------------------
 
 @app.route("/metrics-history")
@@ -534,11 +517,11 @@ def metrics_history():
         anomalies=anomalies
     )
 
-
 # ---------------------------------------------------------
-#                     LANCEMENT
+# LANCEMENT COMPATIBLE RAILWAY
 # ---------------------------------------------------------
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
