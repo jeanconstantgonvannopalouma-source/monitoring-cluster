@@ -1,5 +1,3 @@
-# config.py
-
 import os
 
 # === Répertoire racine du projet ===
