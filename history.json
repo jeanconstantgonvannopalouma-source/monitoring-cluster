@@ -1,0 +1,23 @@
+[
+  {
+    "timestamp": "2026-01-01T00:00:00",
+    "type": "SYSTEM_START",
+    "site": null,
+    "agent": "system",
+    "details": "Cluster démarré"
+  },
+  {
+    "timestamp": "2026-01-01T00:05:00",
+    "type": "SITE_ADD",
+    "site": "https://example.com",
+    "agent": "system",
+    "details": "Ajout du site (general)"
+  },
+  {
+    "timestamp": "2026-01-01T00:10:00",
+    "type": "AGENT_ONLINE",
+    "site": null,
+    "agent": "agent-1",
+    "details": "Agent Nord opérationnel"
+  }
+]

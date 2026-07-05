@@ -1,0 +1,20 @@
+[
+  {
+    "id": "agent-1",
+    "name": "Agent Nord",
+    "location": "France-Nord",
+    "status": "online",
+    "cpu": 12,
+    "ram": 35,
+    "tasks": 0
+  },
+  {
+    "id": "agent-2",
+    "name": "Agent Sud",
+    "location": "France-Sud",
+    "status": "online",
+    "cpu": 18,
+    "ram": 42,
+    "tasks": 0
+  }
+]
