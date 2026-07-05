@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "url": "https://google.com",
+    "categorie": "Web",
+    "tags": ["public", "search"],
+    "added_at": "2026-01-01T00:00:00",
+    "status": "UNKNOWN",
+    "last_latency": null,
+    "last_code": null,
+    "last_agent": null,
+    "anomalies": 0,
+    "disponibilite": 100.0
+  },
+  {
+    "url": "https://github.com",
+    "categorie": "Web",
+    "tags": ["code", "repository"],
+    "added_at": "2026-01-01T00:00:00",
+    "status": "UNKNOWN",
+    "last_latency": null,
+    "last_code": null,
+    "last_agent": null,
+    "anomalies": 0,
+    "disponibilite": 100.0
+  },
+  {
+    "url": "https://api.monservice.com",
+    "categorie": "API",
+    "tags": ["backend", "critical"],
+    "added_at": "2026-01-01T00:00:00",
+    "status": "UNKNOWN",
+    "last_latency": null,
+    "last_code": null,
+    "last_agent": null,
+    "anomalies": 0,
+    "disponibilite": 100.0
+  }
+]
