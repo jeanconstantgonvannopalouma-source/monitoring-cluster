@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Sites monitorés</h3>
+
+<!-- Résumé global -->
+<div class="mdl-grid">
+
+    <!-- Nombre total de sites -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Total des sites</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #3F51B5;">
+                    {{ sites|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sites UP -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Sites UP</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #4CAF50;">
+                    {{ sites | selectattr("status", "equalto", "UP") | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sites DOWN -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Sites DOWN</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #F44336;">
+                    {{ sites | selectattr("status", "equalto", "DOWN") | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Tableau des sites -->
+<h4 class="mdl-typography--title">État détaillé des sites</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Site</th>
+            <th>Statut</th>
+            <th>Latence</th>
+            <th>Disponibilité</th>
+            <th>Agent</th>
+            <th>Dernière vérification</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for site in sites %}
+        <tr>
+            <!-- Nom du site -->
+            <td class="mdl-data-table__cell--non-numeric">{{ site.site }}</td>
+
+            <!-- Statut -->
+            <td>
+                {% if site.status == "UP" or site.status == 200 %}
+                    <span style="color: #4CAF50; font-weight: bold;">UP</span>
+                {% else %}
+                    <span style="color: #F44336; font-weight: bold;">DOWN</span>
+                {% endif %}
+            </td>
+
+            <!-- Latence -->
+            <td>
+                {% if site.latency > 1000 %}
+                    <span style="color: #F44336; font-weight: bold;">{{ site.latency }} ms</span>
+                {% elif site.latency > 500 %}
+                    <span style="color: #FF9800; font-weight: bold;">{{ site.latency }} ms</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">{{ site.latency }} ms</span>
+                {% endif %}
+            </td>
+
+            <!-- Disponibilité -->
+            <td>
+                {% if site.dispo < 90 %}
+                    <span style="color: #F44336; font-weight: bold;">{{ site.dispo }}%</span>
+                {% elif site.dispo < 98 %}
+                    <span style="color: #FF9800; font-weight: bold;">{{ site.dispo }}%</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">{{ site.dispo }}%</span>
+                {% endif %}
+            </td>
+
+            <!-- Agent -->
+            <td>{{ site.agent }}</td>
+
+            <!-- Timestamp -->
+            <td>{{ site.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
