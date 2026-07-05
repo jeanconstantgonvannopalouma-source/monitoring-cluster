@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Anomalies détectées</h3>
+
+<!-- Résumé global -->
+<div class="mdl-grid">
+
+    <!-- Total anomalies -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Total anomalies</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #F44336;">
+                    {{ anomalies|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critiques -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Critiques</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #D32F2F;">
+                    {{ anomalies | selectattr("level", "equalto", "HIGH") | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Moyennes -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Moyennes</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #FF9800;">
+                    {{ anomalies | selectattr("level", "equalto", "MEDIUM") | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Tableau des anomalies -->
+<h4 class="mdl-typography--title">Détails des anomalies</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Type</th>
+            <th>Site</th>
+            <th>Agent</th>
+            <th>Métrique</th>
+            <th>Criticité</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for a in anomalies %}
+        <tr>
+            <!-- Type -->
+            <td class="mdl-data-table__cell--non-numeric">{{ a.type }}</td>
+
+            <!-- Site -->
+            <td>{{ a.site }}</td>
+
+            <!-- Agent -->
+            <td>{{ a.agent }}</td>
+
+            <!-- Métrique -->
+            <td>{{ a.metric }}</td>
+
+            <!-- Criticité -->
+            <td>
+                {% if a.level == "HIGH" %}
+                    <span style="color: #F44336; font-weight: bold;">Critique</span>
+                {% elif a.level == "MEDIUM" %}
+                    <span style="color: #FF9800; font-weight: bold;">Moyenne</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">Faible</span>
+                {% endif %}
+            </td>
+
+            <!-- Timestamp -->
+            <td>{{ a.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
