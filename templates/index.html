@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Accueil · Monitoring Cluster{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header">Bienvenue</div>
+            <div class="card-body">
+                <p>Plateforme de monitoring de cluster, agents, sites et métriques.</p>
+                <a class="btn btn-primary" href="{{ url_for('overview') }}">Accéder au dashboard</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header">Authentification</div>
+            <div class="card-body">
+                <a class="btn btn-outline-light me-2" href="{{ url_for('login') }}">Login</a>
+                <a class="btn btn-outline-info" href="{{ url_for('signup') }}">Signup</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
