@@ -21,8 +21,8 @@ SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
 # === Telegram ===
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "TON_TOKEN_ICI")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "TON_CHAT_ID_ICI")
+TELEGRAM_TOKEN = os.getenv("8844714776:AAHuMnvK4jElXI1tsqPOW1tp4rQpTlAx2oc")
+TELEGRAM_CHAT_ID = os.getenv("8226897199")
 
 # === Monitoring ===
 TIMEOUT = 5
