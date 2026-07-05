@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Agents du cluster</h3>
+
+<!-- Résumé global -->
+<div class="mdl-grid">
+
+    <!-- Nombre d'agents -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Agents actifs</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #3F51B5;">
+                    {{ agents|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agents en anomalie -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Agents en anomalie</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #F44336;">
+                    {{ anomalies|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agents surchargés -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Agents surchargés</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #FF9800;">
+                    {{ agents | selectattr("cpu", "gt", 80) | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Tableau des agents -->
+<h4 class="mdl-typography--title">Liste des agents</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Nom</th>
+            <th>IP</th>
+            <th>Version</th>
+            <th>CPU</th>
+            <th>RAM</th>
+            <th>Sites assignés</th>
+            <th>Dernier ping</th>
+            <th>Statut</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for agent in agents %}
+        <tr>
+            <td class="mdl-data-table__cell--non-numeric">{{ agent.name }}</td>
+            <td>{{ agent.ip }}</td>
+            <td>{{ agent.version }}</td>
+
+            <!-- CPU -->
+            <td>
+                {% if agent.cpu > 80 %}
+                    <span style="color: #F44336; font-weight: bold;">{{ agent.cpu }}%</span>
+                {% elif agent.cpu > 60 %}
+                    <span style="color: #FF9800; font-weight: bold;">{{ agent.cpu }}%</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">{{ agent.cpu }}%</span>
+                {% endif %}
+            </td>
+
+            <!-- RAM -->
+            <td>
+                {% if agent.ram > 90 %}
+                    <span style="color: #F44336; font-weight: bold;">{{ agent.ram }}%</span>
+                {% elif agent.ram > 70 %}
+                    <span style="color: #FF9800; font-weight: bold;">{{ agent.ram }}%</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">{{ agent.ram }}%</span>
+                {% endif %}
+            </td>
+
+            <!-- Sites assignés -->
+            <td>{{ agent.sites|length }}</td>
+
+            <!-- Dernier ping -->
+            <td>{{ agent.last_ping }}</td>
+
+            <!-- Statut -->
+            <td>
+                {% if agent.status == "UP" %}
+                    <span style="color: #4CAF50; font-weight: bold;">UP</span>
+                {% else %}
+                    <span style="color: #F44336; font-weight: bold;">DOWN</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
