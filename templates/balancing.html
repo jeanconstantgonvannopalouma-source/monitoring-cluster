@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Répartition des sites entre les agents</h3>
+
+<!-- Résumé global -->
+<div class="mdl-grid">
+
+    <!-- Nombre total de sites -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Total des sites</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #3F51B5;">
+                    {{ assignments.total_sites }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nombre d'agents -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Agents actifs</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #4CAF50;">
+                    {{ assignments.total_agents }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charge moyenne -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Charge moyenne</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #FF9800;">
+                    {{ assignments.average_load }} sites/agent
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Tableau des assignations -->
+<h4 class="mdl-typography--title">Détails de la répartition</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Agent</th>
+            <th>Nombre de sites</th>
+            <th>Sites assignés</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for agent, sites in assignments.map.items() %}
+        <tr>
+            <!-- Nom de l'agent -->
+            <td class="mdl-data-table__cell--non-numeric">{{ agent }}</td>
+
+            <!-- Nombre de sites -->
+            <td>
+                {% if sites|length > assignments.average_load %}
+                    <span style="color: #F44336; font-weight: bold;">{{ sites|length }}</span>
+                {% elif sites|length == assignments.average_load %}
+                    <span style="color: #FF9800; font-weight: bold;">{{ sites|length }}</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">{{ sites|length }}</span>
+                {% endif %}
+            </td>
+
+            <!-- Liste des sites -->
+            <td>
+                {% for s in sites %}
+                    <span class="mdl-chip">
+                        <span class="mdl-chip__text">{{ s }}</span>
+                    </span>
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
