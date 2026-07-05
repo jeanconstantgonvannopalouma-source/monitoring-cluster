@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Historique des événements</h3>
+
+<!-- Résumé global -->
+<div class="mdl-grid">
+
+    <!-- Nombre total d'événements -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Total événements</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #3F51B5;">
+                    {{ events|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incidents DOWN -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Incidents DOWN</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #F44336;">
+                    {{ events | selectattr("type", "equalto", "DOWN") | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Autoscaling -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Autoscaling</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #FF9800;">
+                    {{ events | selectattr("type", "equalto", "AUTOSCALING") | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Tableau de l'historique -->
+<h4 class="mdl-typography--title">Chronologie des événements</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Timestamp</th>
+            <th>Type</th>
+            <th>Site</th>
+            <th>Agent</th>
+            <th>Détails</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for e in events %}
+        <tr>
+            <!-- Timestamp -->
+            <td class="mdl-data-table__cell--non-numeric">{{ e.timestamp }}</td>
+
+            <!-- Type -->
+            <td>
+                {% if e.type == "DOWN" %}
+                    <span style="color: #F44336; font-weight: bold;">DOWN</span>
+                {% elif e.type == "UP" %}
+                    <span style="color: #4CAF50; font-weight: bold;">UP</span>
+                {% elif e.type == "AUTOSCALING" %}
+                    <span style="color: #FF9800; font-weight: bold;">Autoscaling</span>
+                {% elif e.type == "ANOMALY" %}
+                    <span style="color: #E91E63; font-weight: bold;">Anomalie</span>
+                {% else %}
+                    <span style="color: #3F51B5; font-weight: bold;">{{ e.type }}</span>
+                {% endif %}
+            </td>
+
+            <!-- Site -->
+            <td>{{ e.site }}</td>
+
+            <!-- Agent -->
+            <td>{{ e.agent }}</td>
+
+            <!-- Détails -->
+            <td>{{ e.details }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
