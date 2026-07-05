@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mdl-typography--headline">Logs du système</h3>
+
+<!-- Résumé global -->
+<div class="mdl-grid">
+
+    <!-- Nombre total de logs -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Total des logs</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #3F51B5;">
+                    {{ logs|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs d'erreurs -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Erreurs</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #F44336;">
+                    {{ logs | selectattr("level", "equalto", "ERROR") | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avertissements -->
+    <div class="mdl-cell mdl-cell--4-col">
+        <div class="mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Avertissements</h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+                <span style="font-size: 32px; font-weight: bold; color: #FF9800;">
+                    {{ logs | selectattr("level", "equalto", "WARNING") | list | length }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Tableau des logs -->
+<h4 class="mdl-typography--title">Détails des logs</h4>
+
+<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%;">
+    <thead>
+        <tr>
+            <th class="mdl-data-table__cell--non-numeric">Timestamp</th>
+            <th>Niveau</th>
+            <th>Message</th>
+            <th>Agent</th>
+            <th>Site</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <!-- Timestamp -->
+            <td class="mdl-data-table__cell--non-numeric">{{ log.timestamp }}</td>
+
+            <!-- Niveau -->
+            <td>
+                {% if log.level == "ERROR" %}
+                    <span style="color: #F44336; font-weight: bold;">Erreur</span>
+                {% elif log.level == "WARNING" %}
+                    <span style="color: #FF9800; font-weight: bold;">Avertissement</span>
+                {% else %}
+                    <span style="color: #4CAF50; font-weight: bold;">Info</span>
+                {% endif %}
+            </td>
+
+            <!-- Message -->
+            <td>{{ log.message }}</td>
+
+            <!-- Agent -->
+            <td>{{ log.agent }}</td>
+
+            <!-- Site -->
+            <td>{{ log.site }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
