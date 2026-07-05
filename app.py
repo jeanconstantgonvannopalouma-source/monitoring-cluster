@@ -27,7 +27,7 @@ import hashlib
 import secrets
 
 # Monitoring / analyse
-from history import charger_historique_pannes
+from history_metrics import charger_historique_pannes
 from monitor import tester_tous_les_sites
 from config import FICHIER_LOG
 from sre_module import analyser_performance_globale
