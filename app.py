@@ -522,6 +522,38 @@ def metrics_history():
         anomalies=anomalies
     )
 
+@app.route("/cron/monitor", methods=["GET"])
+def cron_monitor():
+    try:
+        # 1. Charger les sites
+        sites = charger_sites()
+
+        # 2. Lancer le monitoring
+        results = monitor_sites(sites)
+
+        # 3. Autoscaling intervalle
+        intervalle = calculer_intervalle_optimal(results)
+
+        # 4. Autoscaling agents
+        cluster_info = analyser_cluster()
+        autoscaling_actions = autoscaling(cluster_info)
+
+        # 5. Détection alertes
+        history_events = charger_historique()
+        alerts = detect_alerts(history_events, results, cluster_info["agents"])
+        envoyer_alertes(alerts["alerts"])
+
+        return {
+            "status": "OK",
+            "results": len(results),
+            "alerts": len(alerts["alerts"]),
+            "intervalle": intervalle["intervalle"],
+            "autoscaling": autoscaling_actions["actions"]
+        }
+
+    except Exception as e:
+        return {"status": "ERROR", "message": str(e)}, 500
+
 # ==========================
 #   LANCEMENT (RAILWAY)
 # ==========================
