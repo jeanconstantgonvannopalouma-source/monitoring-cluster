@@ -26,7 +26,8 @@ import hashlib
 import secrets
 
 # Monitoring / analyse
-from history_metrics import charger_historique_pannes
+from history import charger_historique, charger_historique_pannes, ajouter_evenement
+from history_metrics import compute_history_metrics
 from monitor import tester_tous_les_sites
 from config import FICHIER_LOG
 from sre_module import analyser_performance_globale
@@ -35,20 +36,13 @@ from comparaison import comparer_sites
 from agents import update_agent, get_agents, ping_agents, analyser_cluster
 from balancer import assign_sites_to_agents
 from network import analyser_reseau
-from agent_logs import get_logs
+from agent_logs import get_agent_logs
 from autoscaling import calculer_intervalle_optimal
-from anomalies import detecter_anomalies
+from anomalies import detecter_anomalies, detecter_anomalie
 from logger import log_event
 from sites_manager import get_sites, add_site
-from alerts_manager import add_alert, get_alerts
-from alerts import alert_all
-from history_metrics import (
-    charger_metrics,
-    extraire_latence_moyenne,
-    extraire_disponibilite,
-    extraire_uptime,
-    extraire_anomalies
-)
+from alerts_manager import envoyer_alertes
+from alerts import detect_alerts
 from autoscaling_manager import autoscaling
 
 # ==========================
@@ -240,17 +234,7 @@ def logs_page():
 
 @app.route("/history")
 def history_page():
-    events = []
-
-    try:
-        with open("history.jsonl", "r") as f:
-            for line in f:
-                events.append(json.loads(line))
-    except FileNotFoundError:
-        pass
-
-    events = sorted(events, key=lambda x: x.get("timestamp", ""), reverse=True)
-
+    events = charger_historique()
     return render_template("history.html", events=events)
 
 # ==========================
@@ -268,7 +252,8 @@ def api_history():
 
 @app.route("/api/logs")
 def api_logs():
-    return jsonify(get_logs())
+    agent = request.args.get("agent", "agent-1")
+    return jsonify(get_agent_logs(agent))
 
 # ==========================
 #   API EVENTS
@@ -276,17 +261,7 @@ def api_logs():
 
 @app.route("/api/events")
 def api_events():
-    events = []
-
-    try:
-        with open("history.jsonl", "r") as f:
-            for line in f:
-                events.append(json.loads(line))
-    except FileNotFoundError:
-        pass
-
-    events = sorted(events, key=lambda x: x.get("timestamp", ""), reverse=True)
-    return jsonify(events)
+    return jsonify(charger_historique())
 
 # ==========================
 #   API METRICS
@@ -294,15 +269,7 @@ def api_events():
 
 @app.route("/api/metrics")
 def api_metrics():
-    metrics = []
-
-    try:
-        with open("agent_metrics.jsonl", "r") as f:
-            for line in f:
-                metrics.append(json.loads(line))
-    except FileNotFoundError:
-        pass
-
+    metrics = compute_history_metrics()
     return jsonify(metrics)
 
 # ==========================
@@ -371,58 +338,43 @@ def network():
     return render_template("network.html", data=data)
 
 # ==========================
-#   METRICS (AGENTS)
+#   METRICS HISTORY
 # ==========================
 
-@app.route("/metrics", methods=["POST"])
-def metrics():
-    data = request.get_json(silent=True)
+@app.route("/metrics-history")
+def metrics_history():
+    metrics = compute_history_metrics()
+    return jsonify(metrics)
 
-    if data is None:
-        return jsonify({"error": "Format JSON invalide"}), 400
+# ==========================
+#   CRON MONITOR (Railway)
+# ==========================
 
-    token = data.get("token")
-
-    if not token:
-        return jsonify({"error": "missing_token"}), 400
-
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT id, email FROM users WHERE token = ?", (token,))
-    row = c.fetchone()
-    conn.close()
-
-    if not row:
-        return jsonify({"error": "invalid_token"}, 403)
-
-    owner_id, owner_email = row
-    data["owner_id"] = owner_id
-
-    with open("agent_metrics.jsonl", "a") as f:
-        f.write(json.dumps(data) + "\n")
-
+@app.route("/cron/monitor", methods=["GET"])
+def cron_monitor():
     try:
-        cpu = float(data.get("cpu", 0))
-        ram = float(data.get("ram", 0))
-        agent_name = data.get("agent") or data.get("name") or "agent"
+        sites = [s["url"] for s in get_sites()]
+        results = tester_tous_les_sites(sites)
 
-        if cpu > 80:
-            alert_all(f"🔥 CPU élevé sur {agent_name} : {cpu}%", [])
+        intervalle = calculer_intervalle_optimal(results)
 
-        if ram > 90:
-            alert_all(f"💥 RAM saturée sur {agent_name} : {ram}%", [])
+        cluster_info = analyser_cluster()
+        autoscaling_actions = autoscaling(cluster_info)
 
-        results = data.get("results", [])
-        if isinstance(results, list):
-            down_sites = [r for r in results if r.get("status") == "DOWN"]
-            for r in down_sites:
-                site_url = r.get("site")
-                alert_all(f"⚠️ Site DOWN : {site_url} (agent {agent_name})", [])
+        history_events = charger_historique()
+        alerts = detect_alerts(history_events, results, cluster_info["agents"])
+        envoyer_alertes(alerts["alerts"])
+
+        return {
+            "status": "OK",
+            "results": len(results),
+            "alerts": len(alerts["alerts"]),
+            "intervalle": intervalle["intervalle"],
+            "autoscaling": autoscaling_actions["actions"]
+        }
 
     except Exception as e:
-        print("DEBUG: Erreur alertes metrics :", e)
-
-    return jsonify({"status": "ok"}), 200
+        return {"status": "ERROR", "message": str(e)}, 500
 
 # ==========================
 #   BACKGROUND TASKS
@@ -442,117 +394,6 @@ def boucle_autoscaling():
         time.sleep(10)
 
 threading.Thread(target=boucle_autoscaling, daemon=True).start()
-
-# ==========================
-#   MES AGENTS / SITES / ALERTES
-# ==========================
-
-@app.route("/my-agents")
-def my_agents():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    agents = get_agents()
-    return render_template("my_agents.html", agents=agents)
-
-@app.route("/my-sites", methods=["GET", "POST"])
-def my_sites():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    if request.method == "POST":
-        url = request.form.get("url")
-        if url:
-            add_site(url)
-
-    sites = get_sites()
-    return render_template("my_sites.html", sites=sites)
-
-@app.route("/my-alerts")
-def my_alerts():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    alerts = get_alerts()
-    return render_template("my_alerts.html", alerts=alerts)
-
-# ==========================
-#   API TOKEN
-# ==========================
-
-@app.route("/api/token")
-def api_token():
-    if "user_id" not in session:
-        return {"error": "not_authenticated"}, 403
-
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT token FROM users WHERE id = ?", (session["user_id"],))
-    row = c.fetchone()
-    conn.close()
-
-    if not row:
-        return {"error": "no_token"}, 400
-
-    token = row[0]
-    return {"token": token}
-
-# ==========================
-#   METRICS HISTORY
-# ==========================
-
-@app.route("/metrics-history")
-def metrics_history():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-
-    metrics = charger_metrics()
-
-    latence = extraire_latence_moyenne(metrics)
-    dispo = extraire_disponibilite(metrics)
-    uptime = extraire_uptime(metrics)
-    anomalies = extraire_anomalies(metrics)
-
-    return render_template(
-        "metrics_history.html",
-        metrics=metrics,
-        latence=latence,
-        dispo=dispo,
-        uptime=uptime,
-        anomalies=anomalies
-    )
-
-@app.route("/cron/monitor", methods=["GET"])
-def cron_monitor():
-    try:
-        # 1. Charger les sites
-        sites = charger_sites()
-
-        # 2. Lancer le monitoring
-        results = monitor_sites(sites)
-
-        # 3. Autoscaling intervalle
-        intervalle = calculer_intervalle_optimal(results)
-
-        # 4. Autoscaling agents
-        cluster_info = analyser_cluster()
-        autoscaling_actions = autoscaling(cluster_info)
-
-        # 5. Détection alertes
-        history_events = charger_historique()
-        alerts = detect_alerts(history_events, results, cluster_info["agents"])
-        envoyer_alertes(alerts["alerts"])
-
-        return {
-            "status": "OK",
-            "results": len(results),
-            "alerts": len(alerts["alerts"]),
-            "intervalle": intervalle["intervalle"],
-            "autoscaling": autoscaling_actions["actions"]
-        }
-
-    except Exception as e:
-        return {"status": "ERROR", "message": str(e)}, 500
 
 # ==========================
 #   LANCEMENT (RAILWAY)
