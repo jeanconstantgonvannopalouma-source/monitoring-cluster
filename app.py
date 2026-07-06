@@ -26,24 +26,24 @@ import hashlib
 import secrets
 
 # Monitoring / analyse
-from app.history import charger_historique, charger_historique_pannes, ajouter_evenement
-from app.history_metrics import compute_history_metrics
-from app.monitor import tester_tous_les_sites
+from history import charger_historique, charger_historique_pannes, ajouter_evenement
+from history_metrics import compute_history_metrics
+from monitor import tester_tous_les_sites
 from config import FICHIER_LOG
-from app.sre_module import analyser_performance_globale
-from app.predictor import predire_panne
-from app.comparaison import comparer_sites
-from app.agents import update_agent, get_agents, ping_agents, analyser_cluster
-from app.balancer import assign_sites_to_agents
-from app.network import analyser_reseau
-from app.agent_logs import get_agent_logs
-from app.autoscaling import calculer_intervalle_optimal
-from app.anomalies import detecter_anomalies, detecter_anomalie
-from app.logger import log_event
-from app.sites_manager import get_sites, add_site
-from app.alerts_manager import envoyer_alertes
-from app.alerts import detect_alerts
-from app.autoscaling_manager import autoscaling
+from sre_module import analyser_performance_globale
+from predictor import predire_panne
+from comparaison import comparer_sites
+from agents import update_agent, get_agents, ping_agents, analyser_cluster
+from balancer import assign_sites_to_agents
+from network import analyser_reseau
+from agent_logs import get_agent_logs
+from autoscaling import calculer_intervalle_optimal
+from anomalies import detecter_anomalies, detecter_anomalie
+from logger import log_event
+from sites_manager import get_sites, add_site
+from alerts_manager import envoyer_alertes
+from alerts import detect_alerts
+from autoscaling_manager import autoscaling
 
 # ==========================
 #   FLASK APP
