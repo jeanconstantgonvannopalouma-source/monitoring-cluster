@@ -27,7 +27,7 @@ import secrets
 
 # Monitoring / analyse
 from app.history import charger_historique, charger_historique_pannes, ajouter_evenement
-from history_metrics import compute_history_metrics
+from app.history_metrics import compute_history_metrics
 from app.monitor import tester_tous_les_sites
 from config import FICHIER_LOG
 from app.sre_module import analyser_performance_globale
@@ -41,7 +41,7 @@ from app.autoscaling import calculer_intervalle_optimal
 from app.anomalies import detecter_anomalies, detecter_anomalie
 from app.logger import log_event
 from app.sites_manager import get_sites, add_site
-from alerts_manager import envoyer_alertes
+from app.alerts_manager import envoyer_alertes
 from app.alerts import detect_alerts
 from app.autoscaling_manager import autoscaling
 
