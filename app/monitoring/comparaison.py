@@ -1,76 +1,79 @@
-import statistics
-from logging.logger import log_event
-from logging.history import ajouter_evenement
+from typing import List, Dict, Any
+from statistics import mean
 
-def score_site(result):
+
+def comparer_sites(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Calcule un score global pour un site.
-    Plus le score est faible, meilleur est le site.
-    """
+    Comparaison professionnelle des sites monitorés.
 
-    latence = result.get("latency") or 0
-    status = result.get("status")
-    dns = result.get("dns") or 0
-    size = result.get("size") or 0
-    anomalies = 1 if result.get("type") == "ANOMALY" else 0
+    Chaque entrée de `results` vient de monitor.py :
+    {
+        "site": ...,
+        "agent": ...,
+        "timestamp": ...,
+        "status": ...,
+        "latency": ...,
+        "dns": ...,
+        "size": ...,
+        "error": ...
+    }
 
-    # Erreur HTTP → pénalité forte
-    erreur = 1 if status not in (200, "OK") else 0
-
-    # Score global
-    score = (
-        latence * 0.4 +
-        erreur * 0.3 +
-        anomalies * 0.2 +
-        dns * 0.05 +
-        size * 0.05
-    )
-
-    return score
-
-
-def comparer_sites(resultats):
-    """
-    Comparaison professionnelle des sites.
-    - score global
-    - classement
-    - top 5
-    - bottom 5
+    Retourne :
+    {
+        "classement_latence": [...],
+        "classement_dns": [...],
+        "classement_taille": [...],
+        "sites_down": [...],
+        "resume": {...}
+    }
     """
 
-    if not resultats:
+    if not results:
         return {
-            "classement": [],
-            "nb_sites": 0,
-            "top_5": [],
-            "bottom_5": []
+            "classement_latence": [],
+            "classement_dns": [],
+            "classement_taille": [],
+            "sites_down": [],
+            "resume": {}
         }
 
-    # Calcul du score pour chaque site
-    scored = []
-    for r in resultats:
-        scored.append({
-            "site": r.get("site"),
-            "agent": r.get("agent"),
-            "latence": r.get("latency"),
-            "status": r.get("status"),
-            "dns": r.get("dns"),
-            "size": r.get("size"),
-            "score": score_site(r)
-        })
+    # ============================
+    #   FILTRAGE
+    # ============================
 
-    # Tri par score croissant
-    classement = sorted(scored, key=lambda x: x["score"])
+    latences = [r for r in results if r.get("latency") is not None]
+    dns_times = [r for r in results if r.get("dns") is not None]
+    sizes = [r for r in results if r.get("size") is not None]
 
-    # Logs
-    log_event("INFO", "Comparaison des sites effectuée", "comparaison")
+    sites_down = [
+        r["site"] for r in results
+        if r.get("status") == "ERROR" or (isinstance(r.get("status"), int) and r["status"] >= 500)
+    ]
 
-    # Historique
-    ajouter_evenement("COMPARAISON", "cluster", "system", "Classement des sites mis à jour")
+    # ============================
+    #   CLASSEMENTS
+    # ============================
+
+    classement_latence = sorted(latences, key=lambda x: x["latency"])
+    classement_dns = sorted(dns_times, key=lambda x: x["dns"])
+    classement_taille = sorted(sizes, key=lambda x: x["size"], reverse=True)
+
+    # ============================
+    #   RÉSUMÉ GLOBAL
+    # ============================
+
+    resume = {
+        "latence_moyenne": mean([r["latency"] for r in latences]) if latences else None,
+        "dns_moyen": mean([r["dns"] for r in dns_times]) if dns_times else None,
+        "taille_moyenne": mean([r["size"] for r in sizes]) if sizes else None,
+        "sites_down": sites_down,
+        "total_sites": len(results)
+    }
 
     return {
-        "classement": classement,
-        "nb_sites": len(resultats),
-        "top_5": classement[:5],
-        "bottom_5": classement[-5:]
+        "classement_latence": classement_latence,
+        "classement_dns": classement_dns,
+        "classement_taille": classement_taille,
+        "sites_down": sites_down,
+        "resume": resume
     }

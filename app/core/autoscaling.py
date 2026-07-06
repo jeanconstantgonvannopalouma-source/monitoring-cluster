@@ -1,74 +1,103 @@
-from config import INTERVAL_MIN, INTERVAL_MAX
-from logging.logger import log_event
-from logging.history import ajouter_evenement
+from typing import Dict, Any, List
+from statistics import mean
 
-def calculer_intervalle_optimal(metrics, anomalies, agents):
+from predictor import predire_panne
+from sre_module import analyser_performance_globale
+from config import MONITOR_INTERVAL
+
+
+# ============================
+#   CONFIG AUTOSCALING INTERVAL
+# ============================
+
+MIN_INTERVAL = 5          # intervalle minimum (sec)
+MAX_INTERVAL = 120        # intervalle maximum (sec)
+STEP_UP = 10              # augmentation si stable
+STEP_DOWN = 15            # réduction si instable
+
+
+def calculer_intervalle_optimal(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Calcule un intervalle intelligent basé sur :
-    - latence moyenne
-    - disponibilité
+    Calcule un intervalle de monitoring optimal basé sur :
+    - latence
+    - erreurs
     - anomalies
-    - CPU / RAM des agents
-    - stabilité
+    - burn rate SRE
+    - risque de panne (predictor)
+
+    Retourne :
+    {
+        "intervalle": ...,
+        "motifs": [...],
+        "risque": ...,
+        "sre": {...}
+    }
     """
 
-    latence = metrics.get("latence_moyenne")
-    dispo = metrics.get("dispo")
-    uptime = metrics.get("uptime")
+    motifs = []
+    intervalle = MONITOR_INTERVAL
 
-    nb_anomalies = len(anomalies)
+    if not results:
+        return {
+            "intervalle": intervalle,
+            "motifs": ["Pas de données, intervalle inchangé"],
+            "risque": 0,
+            "sre": {}
+        }
 
-    cpu_moyen = sum(a["cpu"] for a in agents if a["cpu"] is not None) / len(agents)
-    ram_moyenne = sum(a["ram"] for a in agents if a["ram"] is not None) / len(agents)
+    # ============================
+    #   ANALYSE SRE
+    # ============================
 
-    # Base
-    intervalle = INTERVAL_MAX
+    sre = analyser_performance_globale(results)
 
-    # Latence
-    if latence is not None:
-        if latence < 0.1:
-            intervalle -= 40
-        elif latence < 0.3:
-            intervalle -= 20
-        else:
-            intervalle += 20
+    latence_moyenne = sre.get("latence_moyenne") or 0
+    erreur_rate = sre.get("erreur_rate") or 0
+    burn_rate = sre.get("burn_rate") or 0
 
-    # Disponibilité
-    if dispo is not None:
-        if dispo < 95:
-            intervalle += 20
-        elif dispo > 99:
-            intervalle -= 10
+    # ============================
+    #   ANALYSE RISQUE
+    # ============================
 
-    # Uptime
-    if uptime is not None and uptime < 90:
-        intervalle += 20
+    prediction = predire_panne(results)
+    risque = prediction.get("risque_global", 0)
 
-    # Anomalies
-    if nb_anomalies > 5:
-        intervalle += 30
-    elif nb_anomalies == 0:
-        intervalle -= 10
+    # ============================
+    #   LOGIQUE AUTOSCALING
+    # ============================
 
-    # Charge CPU
-    if cpu_moyen > 80:
-        intervalle += 20
-    elif cpu_moyen < 40:
-        intervalle -= 10
+    # 1. Si risque élevé → réduire intervalle
+    if risque >= 60:
+        intervalle = max(MIN_INTERVAL, intervalle - STEP_DOWN)
+        motifs.append(f"Risque élevé ({risque}%), intervalle réduit")
 
-    # Charge RAM
-    if ram_moyenne > 85:
-        intervalle += 20
-    elif ram_moyenne < 50:
-        intervalle -= 10
+    # 2. Si burn rate élevé → réduire intervalle
+    elif burn_rate and burn_rate > 1.5:
+        intervalle = max(MIN_INTERVAL, intervalle - STEP_DOWN)
+        motifs.append(f"Burn rate élevé ({burn_rate}), intervalle réduit")
 
-    # Clamp
-    intervalle = max(INTERVAL_MIN, min(INTERVAL_MAX, intervalle))
+    # 3. Si latence élevée → réduire intervalle
+    elif latence_moyenne > 1.5:
+        intervalle = max(MIN_INTERVAL, intervalle - STEP_DOWN)
+        motifs.append(f"Latence élevée ({latence_moyenne}s), intervalle réduit")
 
-    # Logs
-    log_event("INFO", f"Autoscaling → nouvel intervalle : {intervalle}s")
+    # 4. Si erreurs fréquentes → réduire intervalle
+    elif erreur_rate > 1.0:
+        intervalle = max(MIN_INTERVAL, intervalle - STEP_DOWN)
+        motifs.append(f"Taux d'erreurs élevé ({erreur_rate}%), intervalle réduit")
 
-    # Historique
-    ajouter_evenement("AUTOSCALING", "cluster", "system", f"Intervalle = {intervalle}s")
+    # 5. Si tout est stable → augmenter intervalle
+    else:
+        intervalle = min(MAX_INTERVAL, intervalle + STEP_UP)
+        motifs.append("Système stable, intervalle augmenté")
 
-    return intervalle
+    # ============================
+    #   RAPPORT FINAL
+    # ============================
+
+    return {
+        "intervalle": intervalle,
+        "motifs": motifs,
+        "risque": risque,
+        "sre": sre
+    }
