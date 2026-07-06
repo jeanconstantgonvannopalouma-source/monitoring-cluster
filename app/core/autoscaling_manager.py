@@ -1,65 +1,121 @@
-import time
-import threading
-
-from core.autoscaling import calculer_intervalle_optimal
-from monitoring.monitor import tester_tous_les_sites
-from core.agents import get_agents
-from monitoring.anomalies import detecter_anomalies
-from logging.logger import log_event
-from logging.history import ajouter_evenement
-
-# Intervalle dynamique
-INTERVAL_SCAN = 30
-
-def boucle_autoscaling():
-    """Boucle d’autoscaling professionnelle."""
-    global INTERVAL_SCAN
-
-    while True:
-        try:
-            # Récupération des agents
-            agents = get_agents()
-
-            # Récupération des sites
-            sites = [s for a in agents for s in a["sites"]]
-
-            # Test des sites
-            resultats = tester_tous_les_sites(sites)
-
-            # Détection anomalies
-            anomalies = detecter_anomalies(resultats)
-
-            # Calcul des métriques
-            latences = [r["latency"] for r in resultats if r["latency"]]
-            latence_moyenne = sum(latences) / len(latences) if latences else None
-
-            metrics = {
-                "latence_moyenne": latence_moyenne,
-                "dispo": 100,  # placeholder
-                "uptime": 100  # placeholder
-            }
-
-            # Calcul intervalle optimal
-            nouvel_intervalle = calculer_intervalle_optimal(metrics, anomalies, agents)
-
-            # Mise à jour
-            INTERVAL_SCAN = nouvel_intervalle
-
-            # Logs
-            log_event("INFO", f"Autoscaling appliqué → intervalle = {INTERVAL_SCAN}s")
-
-            # Historique
-            ajouter_evenement("AUTOSCALING", "cluster", "system", f"Intervalle = {INTERVAL_SCAN}s")
-
-        except Exception as e:
-            log_event("ERROR", f"Erreur autoscaling : {e}")
-
-        # Attente
-        time.sleep(INTERVAL_SCAN)
+from typing import Dict, Any, List
+from balancer import assign_sites_to_agents, compute_agent_load, find_overloaded_agents, rebalance
+from agents import get_agents, update_agent
 
 
-def lancer_autoscaling():
-    """Lance le thread d’autoscaling."""
-    thread = threading.Thread(target=boucle_autoscaling, daemon=True)
-    thread.start()
-    log_event("INFO", "Autoscaling lancé")
+# ============================
+#   CONFIG AUTOSCALING
+# ============================
+
+MAX_SITES_PER_AGENT = 10          # seuil de surcharge
+MIN_SITES_PER_AGENT = 2           # seuil de sous-utilisation
+MAX_AGENTS = 20                   # limite cluster
+MIN_AGENTS = 1                    # minimum cluster
+
+
+def autoscaling(cluster_info: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Autoscaling professionnel basé sur :
+    - nombre d'agents
+    - charge par agent
+    - surcharge
+    - sous-utilisation
+    - rééquilibrage automatique
+
+    cluster_info vient de analyser_cluster() :
+    {
+        "total_agents": ...,
+        "online": ...,
+        "offline": ...,
+        "agents": [...],
+        "stats": {...}
+    }
+    """
+
+    agents = cluster_info.get("agents", [])
+    total_agents = cluster_info.get("total_agents", 0)
+
+    # Si aucun agent → autoscaling impossible
+    if total_agents == 0:
+        return {
+            "action": "NO_AGENTS",
+            "details": "Aucun agent disponible pour autoscaling."
+        }
+
+    # ============================
+    #   CHARGES DES AGENTS
+    # ============================
+
+    # On récupère les sites assignés via balancer
+    sites = []
+    for agent in agents:
+        sites.extend(agent.get("sites", []))  # si tu veux stocker les sites dans agents.json
+
+    assignments = assign_sites_to_agents(sites, agents)
+    load = compute_agent_load(assignments)
+
+    overloaded = find_overloaded_agents(assignments, threshold=MAX_SITES_PER_AGENT)
+    underloaded = [a for a, count in load.items() if count < MIN_SITES_PER_AGENT]
+
+    actions = []
+
+    # ============================
+    #   SCALE UP (ajout d'agents)
+    # ============================
+
+    if overloaded and total_agents < MAX_AGENTS:
+        new_agent_name = f"agent-auto-{total_agents + 1}"
+        update_agent(new_agent_name, "127.0.0.1", "1.0")
+
+        actions.append({
+            "action": "SCALE_UP",
+            "agent_added": new_agent_name,
+            "reason": f"Agents surchargés : {overloaded}"
+        })
+
+        # Rééquilibrage après ajout
+        assignments = rebalance(assignments)
+
+    # ============================
+    #   SCALE DOWN (suppression d'agents)
+    # ============================
+
+    if underloaded and total_agents > MIN_AGENTS:
+        # On retire le premier agent sous-utilisé
+        agent_to_remove = underloaded[0]
+
+        actions.append({
+            "action": "SCALE_DOWN",
+            "agent_removed": agent_to_remove,
+            "reason": f"Agent sous-utilisé ({load[agent_to_remove]} sites)"
+        })
+
+        # On ne supprime pas physiquement l'agent du fichier ici,
+        # mais tu peux ajouter une fonction remove_agent() si tu veux.
+
+        # Rééquilibrage après suppression
+        assignments = rebalance(assignments)
+
+    # ============================
+    #   RÉÉQUILIBRAGE SIMPLE
+    # ============================
+
+    if not overloaded and not underloaded:
+        actions.append({
+            "action": "REBALANCE",
+            "details": "Rééquilibrage automatique du cluster."
+        })
+        assignments = rebalance(assignments)
+
+    # ============================
+    #   RAPPORT FINAL
+    # ============================
+
+    return {
+        "actions": actions,
+        "assignments": assignments,
+        "load": load,
+        "overloaded": overloaded,
+        "underloaded": underloaded,
+        "total_agents": total_agents
+    }

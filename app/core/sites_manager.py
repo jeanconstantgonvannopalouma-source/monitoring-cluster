@@ -1,78 +1,143 @@
+import json
+import os
 from datetime import datetime
-from logging.logger import log_event
-from logging.history import ajouter_evenement
+from typing import List, Dict, Any
 
-SITES = []
+FICHIER_SITES = "sites.json"
 
 
-def add_site(url, categorie="general", tags=None):
-    """Ajoute un site avec métadonnées professionnelles."""
+# ============================
+#   UTILITAIRES FICHIER
+# ============================
+
+def _charger_sites() -> List[Dict[str, Any]]:
+    """Charge la liste des sites depuis sites.json."""
+    if not os.path.exists(FICHIER_SITES):
+        return []
+
+    try:
+        with open(FICHIER_SITES, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def _sauvegarder_sites(sites: List[Dict[str, Any]]) -> None:
+    """Sauvegarde la liste des sites dans sites.json."""
+    try:
+        with open(FICHIER_SITES, "w", encoding="utf-8") as f:
+            json.dump(sites, f, indent=4)
+    except Exception as e:
+        print(f"[sites_manager] Erreur sauvegarde sites : {e}")
+
+
+# ============================
+#   API PUBLIQUE
+# ============================
+
+def get_sites() -> List[Dict[str, Any]]:
+    """Retourne la liste des sites."""
+    return _charger_sites()
+
+
+def add_site(url: str,
+             categorie: str = "general",
+             tags: List[str] | None = None) -> Dict[str, Any]:
+    """
+    Ajoute un site professionnel dans la base.
+
+    - url : URL du site
+    - categorie : catégorie (ex: ecommerce, api, blog)
+    - tags : liste de tags (optionnel)
+
+    Retourne le site ajouté ou une erreur.
+    """
+
     if tags is None:
         tags = []
 
-    site = {
+    sites = _charger_sites()
+
+    # Vérifie si le site existe déjà
+    for s in sites:
+        if s["url"] == url:
+            return {"error": "Site déjà existant"}
+
+    nouveau = {
         "url": url,
         "categorie": categorie,
         "tags": tags,
         "added_at": datetime.utcnow().isoformat(),
+
+        # Métadonnées professionnelles
         "status": "UNKNOWN",
+        "last_check": None,
         "last_latency": None,
+        "last_dns": None,
         "last_code": None,
         "last_agent": None,
+
+        # SRE metrics
+        "uptime": 100.0,
+        "disponibilite": 100.0,
         "anomalies": 0,
-        "disponibilite": 100.0
+        "checks_total": 0,
+        "checks_ok": 0,
+        "checks_error": 0
     }
 
-    SITES.append(site)
+    sites.append(nouveau)
+    _sauvegarder_sites(sites)
 
-    log_event("INFO", f"Site ajouté : {url}", "sites_manager")
-    ajouter_evenement("SITE_ADD", url, "system", f"Ajout du site ({categorie})")
-
-    return site
+    return nouveau
 
 
-def remove_site(url):
-    """Supprime un site."""
-    global SITES
-    SITES = [s for s in SITES if s["url"] != url]
+def update_site_metrics(url: str, result: Dict[str, Any]) -> None:
+    """
+    Met à jour les métriques d'un site après un test.
+    Utilisé par monitor.py ou par les agents.
+    """
 
-    log_event("WARNING", f"Site supprimé : {url}", "sites_manager")
-    ajouter_evenement("SITE_REMOVE", url, "system", "Suppression du site")
+    sites = _charger_sites()
 
+    for s in sites:
+        if s["url"] == url:
+
+            s["last_check"] = result.get("timestamp")
+            s["last_latency"] = result.get("latency")
+            s["last_dns"] = result.get("dns")
+            s["last_code"] = result.get("status")
+            s["last_agent"] = result.get("agent")
+
+            # SRE metrics
+            s["checks_total"] += 1
+
+            if isinstance(result.get("status"), int) and result["status"] < 500:
+                s["checks_ok"] += 1
+            else:
+                s["checks_error"] += 1
+                s["anomalies"] += 1
+
+            # Disponibilité
+            if s["checks_total"] > 0:
+                s["disponibilite"] = round((s["checks_ok"] / s["checks_total"]) * 100, 2)
+
+            break
+
+    _sauvegarder_sites(sites)
+
+
+def delete_site(url: str) -> bool:
+    """
+    Supprime un site de la base.
+    Retourne True si supprimé, False sinon.
+    """
+
+    sites = _charger_sites()
+    new_sites = [s for s in sites if s["url"] != url]
+
+    if len(new_sites) == len(sites):
+        return False
+
+    _sauvegarder_sites(new_sites)
     return True
-
-
-def update_site(url, data):
-    """Met à jour les métadonnées d’un site."""
-    for site in SITES:
-        if site["url"] == url:
-            site.update(data)
-
-            log_event("INFO", f"Site mis à jour : {url}", "sites_manager")
-            ajouter_evenement("SITE_UPDATE", url, "system", str(data))
-
-            return site
-    return None
-
-
-def get_sites():
-    """Retourne tous les sites."""
-    return SITES
-
-
-def get_site(url):
-    """Retourne un site spécifique."""
-    for site in SITES:
-        if site["url"] == url:
-            return site
-    return None
-
-
-def get_sites_by_category(cat):
-    """Retourne les sites d’une catégorie."""
-    return [s for s in SITES if s["categorie"] == cat]
-
-
-def get_sites_for_agent(agent_name):
-    """Retourne les sites assignés à un agent."""
-    return [s for s in SITES if s.get("last_agent") == agent_name]

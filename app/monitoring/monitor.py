@@ -4,23 +4,39 @@ import socket
 from datetime import datetime
 
 from config import TIMEOUT
-from logging.logger import log_event
-from logging.history import ajouter_evenement
+
+# Import corrects (ton app.py utilise ces modules à la racine)
+from logger import log_event
+from history import ajouter_evenement
 from anomalies import detecter_anomalie
 
 
 def resolve_dns(url):
-    """Retourne le temps de résolution DNS."""
+    """
+    Mesure le temps de résolution DNS.
+    Retourne un float en secondes ou None si échec.
+    """
     try:
         debut = time.time()
-        socket.gethostbyname(url.replace("https://", "").replace("http://", "").split("/")[0])
+        hostname = url.replace("https://", "").replace("http://", "").split("/")[0]
+        socket.gethostbyname(hostname)
         return round(time.time() - debut, 3)
-    except:
+    except Exception:
         return None
 
 
 def tester_site(url, agent_name="agent-1"):
-    """Teste un site et retourne un résultat professionnel."""
+    """
+    Test professionnel d’un site :
+    - DNS
+    - Latence HTTP
+    - Taille de la réponse
+    - Code HTTP
+    - Détection d’anomalies
+    - Historique
+    - Logs
+    """
+
     result = {
         "site": url,
         "agent": agent_name,
@@ -46,16 +62,26 @@ def tester_site(url, agent_name="agent-1"):
         result["size"] = len(r.content)
 
         # Historique
-        ajouter_evenement("CHECK", url, agent_name, f"Status {r.status_code}, Latence {latence} ms")
+        ajouter_evenement(
+            type_event="CHECK",
+            site=url,
+            agent=agent_name,
+            details=f"Status {r.status_code}, Latence {latence} sec"
+        )
 
         # Logs
-        log_event("INFO", f"Test OK: {url} ({latence} ms)")
+        log_event("INFO", f"[{agent_name}] Test OK: {url} ({latence} sec)")
 
-        # Anomalies
+        # Détection d’anomalies
         anomaly = detecter_anomalie(result)
         if anomaly:
-            ajouter_evenement("ANOMALY", url, agent_name, anomaly["type"])
-            log_event("WARNING", f"Anomalie détectée sur {url}: {anomaly['type']}")
+            ajouter_evenement(
+                type_event="ANOMALY",
+                site=url,
+                agent=agent_name,
+                details=anomaly["type"]
+            )
+            log_event("WARNING", f"[{agent_name}] Anomalie détectée sur {url}: {anomaly['type']}")
 
         return result
 
@@ -64,16 +90,24 @@ def tester_site(url, agent_name="agent-1"):
         result["error"] = str(e)
 
         # Historique
-        ajouter_evenement("ERROR", url, agent_name, str(e))
+        ajouter_evenement(
+            type_event="ERROR",
+            site=url,
+            agent=agent_name,
+            details=str(e)
+        )
 
         # Logs
-        log_event("ERROR", f"Erreur sur {url}: {e}")
+        log_event("ERROR", f"[{agent_name}] Erreur sur {url}: {e}")
 
         return result
 
 
 def tester_tous_les_sites(sites, agent_name="agent-1"):
-    """Teste tous les sites assignés à un agent."""
+    """
+    Teste tous les sites assignés à un agent.
+    Retourne une liste de résultats professionnels.
+    """
     resultats = []
 
     for site in sites:

@@ -1,71 +1,92 @@
-from logging.logger import log_event
-from logging.history import ajouter_evenement
+from typing import List, Dict, Any
 
-def calculer_score(agent):
+
+def assign_sites_to_agents(sites: List[str], agents: List[Dict[str, Any]]) -> Dict[str, List[str]]:
     """
-    Calcule un score de charge pour un agent.
-    Plus le score est élevé, plus l'agent est chargé.
-    """
-    cpu = agent.get("cpu") or 0
-    ram = agent.get("ram") or 0
-    latence = agent.get("latency") or 0
-    nb_sites = len(agent.get("sites", []))
+    Répartition professionnelle des sites entre les agents.
 
-    return cpu * 0.4 + ram * 0.3 + latence * 0.2 + nb_sites * 0.1
+    - sites : liste des URLs
+    - agents : liste des agents (dicts venant de agents.py)
 
-
-def assign_sites_to_agents(sites, agents):
-    """
-    Répartition intelligente basée sur la charge des agents.
-    """
-    if not sites or not agents:
-        return {
-            "total_sites": 0,
-            "total_agents": len(agents),
-            "average_load": 0,
-            "map": {}
-        }
-
-    # Filtrer agents offline
-    agents_online = [a for a in agents if a["status"] == "ONLINE"]
-
-    if not agents_online:
-        return {
-            "total_sites": len(sites),
-            "total_agents": 0,
-            "average_load": 0,
-            "map": {}
-        }
-
-    # Calcul du score de charge
-    agents_sorted = sorted(agents_online, key=lambda a: calculer_score(a))
-
-    repartition = {a["name"]: [] for a in agents_sorted}
-
-    # Répartition intelligente
-    for site in sites:
-        agent = agents_sorted[0]  # agent le moins chargé
-        repartition[agent["name"]].append(site)
-
-        # Mise à jour du score
-        agent["sites"].append(site)
-
-        # Re‑tri
-        agents_sorted = sorted(agents_sorted, key=lambda a: calculer_score(a))
-
-    # Logs
-    log_event("INFO", "Répartition des sites effectuée")
-
-    # Historique
-    ajouter_evenement("BALANCING", "cluster", "system", "Répartition des sites mise à jour")
-
-    # Calcul charge moyenne
-    loads = [len(sites) for sites in repartition.values()]
-    average_load = sum(loads) / len(loads)
-
-    return {
-        "total_sites": len(sites),
-        "total_agents": len(agents_online),
-        "average_load": round(average_load, 2),
-        "map": repartition
+    Retourne :
+    {
+        "agent-1": ["site1", "site2"],
+        "agent-2": ["site3"],
+        ...
     }
+
+    Algorithme :
+    - Round-robin équilibré
+    - Si aucun agent → retourne {}
+    - Si un seul agent → tous les sites lui sont assignés
+    """
+
+    assignments: Dict[str, List[str]] = {}
+
+    if not agents:
+        return {}
+
+    # Normalisation des noms d'agents
+    agent_names = [a.get("name", "agent-unknown") for a in agents]
+
+    # Initialisation
+    for name in agent_names:
+        assignments[name] = []
+
+    # Round-robin professionnel
+    index = 0
+    total_agents = len(agent_names)
+
+    for site in sites:
+        agent_name = agent_names[index]
+        assignments[agent_name].append(site)
+
+        index = (index + 1) % total_agents
+
+    return assignments
+
+
+def compute_agent_load(assignments: Dict[str, List[str]]) -> Dict[str, int]:
+    """
+    Retourne la charge de chaque agent (nombre de sites assignés).
+
+    Exemple :
+    {
+        "agent-1": 5,
+        "agent-2": 3
+    }
+    """
+    return {agent: len(sites) for agent, sites in assignments.items()}
+
+
+def find_overloaded_agents(assignments: Dict[str, List[str]], threshold: int = 10) -> List[str]:
+    """
+    Détecte les agents surchargés.
+
+    - threshold : nombre max de sites avant surcharge
+
+    Retourne une liste des agents surchargés.
+    """
+    overloaded = []
+    for agent, sites in assignments.items():
+        if len(sites) > threshold:
+            overloaded.append(agent)
+    return overloaded
+
+
+def rebalance(assignments: Dict[str, List[str]]) -> Dict[str, List[str]]:
+    """
+    Rééquilibrage professionnel des sites entre agents.
+
+    - Récupère tous les sites
+    - Répartit à nouveau via round-robin
+
+    Retourne un nouvel assignments équilibré.
+    """
+    all_sites = []
+    agents = list(assignments.keys())
+
+    for sites in assignments.values():
+        all_sites.extend(sites)
+
+    return assign_sites_to_agents(all_sites, [{"name": a} for a in agents])

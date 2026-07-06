@@ -1,81 +1,144 @@
-import statistics
-from logging.logger import log_event
-from logging.history import ajouter_evenement
+from typing import List, Dict, Any
+from statistics import mean
 
-SLO = 0.99  # objectif interne
-SLA = 0.98  # contrat externe
 
-def analyser_performance_globale(resultats):
+# ============================
+#   CONFIG SRE (modifiable)
+# ============================
+
+SLO_DISPONIBILITE = 99.9        # Objectif de disponibilité
+SLO_LATENCE_MS = 1.0            # Latence cible (1 sec)
+SLO_ERREURS = 0.1               # 0.1% d'erreurs max
+
+
+def percentile(values: List[float], p: float) -> float:
     """
-    Analyse SRE professionnelle :
-    - disponibilité
-    - erreur budget
-    - latence moyenne
-    - variance latence
-    - stabilité
-    - taux d'erreurs
-    - taux d'anomalies
+    Calcule un percentile (p95, p99).
+    """
+    if not values:
+        return None
+    values_sorted = sorted(values)
+    k = int(len(values_sorted) * p)
+    k = min(k, len(values_sorted) - 1)
+    return values_sorted[k]
+
+
+def analyser_performance_globale(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Analyse SRE professionnelle basée sur les résultats des tests.
+
+    Chaque entrée de `results` vient de monitor.py :
+    {
+        "site": ...,
+        "agent": ...,
+        "timestamp": ...,
+        "status": ...,
+        "latency": ...,
+        "dns": ...,
+        "size": ...,
+        "error": ...
+    }
+
+    Retourne un rapport SRE structuré :
+    {
+        "disponibilite": ...,
+        "latence_moyenne": ...,
+        "latence_p95": ...,
+        "latence_p99": ...,
+        "erreur_rate": ...,
+        "burn_rate": ...,
+        "slo_status": ...,
+        "score": ...
+    }
     """
 
-    if not resultats:
+    if not results:
         return {
-            "nb_sites": 0,
             "disponibilite": None,
-            "erreur_budget": None,
             "latence_moyenne": None,
-            "latence_variance": None,
-            "stabilite": None,
-            "taux_erreurs": None,
-            "taux_anomalies": None,
-            "slo": SLO,
-            "sla": SLA
+            "latence_p95": None,
+            "latence_p99": None,
+            "erreur_rate": None,
+            "burn_rate": None,
+            "slo_status": "NO_DATA",
+            "score": 0
         }
 
-    nb_total = len(resultats)
-    nb_ok = sum(1 for r in resultats if r.get("status") == 200)
-    nb_erreurs = nb_total - nb_ok
+    # ============================
+    #   DISPONIBILITÉ
+    # ============================
 
-    # Disponibilité
-    disponibilite = nb_ok / nb_total
+    total = len(results)
+    up = sum(1 for r in results if isinstance(r.get("status"), int) and r["status"] < 500)
+    disponibilite = (up / total) * 100 if total else 0
 
-    # Erreur budget
-    erreur_budget = 1 - disponibilite
+    # ============================
+    #   LATENCE
+    # ============================
 
-    # Latence
-    latences = [r.get("latency") for r in resultats if r.get("latency")]
-    latence_moyenne = statistics.mean(latences) if latences else None
-    latence_variance = statistics.pvariance(latences) if len(latences) > 1 else 0
+    latences = [r["latency"] for r in results if r.get("latency") is not None]
 
-    # Stabilité (inverse de la variance)
-    stabilite = 1 / (1 + latence_variance)
+    latence_moyenne = mean(latences) if latences else None
+    latence_p95 = percentile(latences, 0.95)
+    latence_p99 = percentile(latences, 0.99)
 
-    # Anomalies
-    anomalies = sum(1 for r in resultats if r.get("type") == "ANOMALY")
-    taux_anomalies = anomalies / nb_total
+    # ============================
+    #   TAUX D'ERREURS
+    # ============================
 
-    # Taux d'erreurs
-    taux_erreurs = nb_erreurs / nb_total
+    erreurs = sum(1 for r in results if r.get("status") == "ERROR")
+    erreur_rate = (erreurs / total) * 100 if total else 0
 
-    # Logs
-    log_event("INFO", f"SRE → dispo={round(disponibilite,3)}, latence={latence_moyenne}", "sre_module")
+    # ============================
+    #   BURN RATE (SLO violation speed)
+    # ============================
 
-    # Historique
-    ajouter_evenement(
-        "SRE",
-        "cluster",
-        "system",
-        f"Dispo={round(disponibilite,3)}, Latence={latence_moyenne}"
+    # Burn rate = erreurs réelles / erreurs autorisées
+    erreurs_autorisees = total * (SLO_ERREURS / 100)
+    burn_rate = (erreurs / erreurs_autorisees) if erreurs_autorisees > 0 else None
+
+    # ============================
+    #   STATUT SLO
+    # ============================
+
+    slo_ok = (
+        disponibilite >= SLO_DISPONIBILITE and
+        (latence_moyenne is None or latence_moyenne <= SLO_LATENCE_MS) and
+        erreur_rate <= SLO_ERREURS
     )
 
+    slo_status = "OK" if slo_ok else "VIOLATED"
+
+    # ============================
+    #   SCORE GLOBAL SRE
+    # ============================
+
+    score = 0
+
+    # Disponibilité
+    if disponibilite is not None:
+        score += min(disponibilite / SLO_DISPONIBILITE * 40, 40)
+
+    # Latence
+    if latence_moyenne is not None:
+        score += max(0, 30 - (latence_moyenne * 10))
+
+    # Erreurs
+    score += max(0, 30 - erreur_rate * 5)
+
+    score = round(score, 2)
+
+    # ============================
+    #   RAPPORT FINAL
+    # ============================
+
     return {
-        "nb_sites": nb_total,
         "disponibilite": round(disponibilite, 3),
-        "erreur_budget": round(erreur_budget, 3),
-        "latence_moyenne": round(latence_moyenne, 3) if latence_moyenne else None,
-        "latence_variance": round(latence_variance, 3),
-        "stabilite": round(stabilite, 3),
-        "taux_erreurs": round(taux_erreurs, 3),
-        "taux_anomalies": round(taux_anomalies, 3),
-        "slo": SLO,
-        "sla": SLA
+        "latence_moyenne": latence_moyenne,
+        "latence_p95": latence_p95,
+        "latence_p99": latence_p99,
+        "erreur_rate": round(erreur_rate, 3),
+        "burn_rate": round(burn_rate, 3) if burn_rate is not None else None,
+        "slo_status": slo_status,
+        "score": score
     }

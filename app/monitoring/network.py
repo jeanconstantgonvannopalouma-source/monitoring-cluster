@@ -1,59 +1,102 @@
-from logging.logger import log_event
-from logging.history import ajouter_evenement
+from typing import List, Dict, Any
+from statistics import mean
 
-def analyser_reseau(resultats, agents):
+
+def analyser_reseau(results: List[Dict[str, Any]], agents: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Analyse réseau professionnelle basée sur les résultats du monitor.
-    - latence moyenne
-    - sites lents
-    - agents en surcharge réseau
-    - matrice réseau pour heatmap
-    """
+    Analyse réseau professionnelle basée sur les résultats des tests.
 
-    # Latence moyenne
-    latences = [r["latency"] for r in resultats if r["latency"]]
-    latence_moyenne = round(sum(latences) / len(latences), 3) if latences else None
-
-    # Sites lents
-    sites_lents = [r["site"] for r in resultats if r["latency"] and r["latency"] > 1.0]
-
-    # Agents en surcharge réseau
-    agents_surcharge = []
-    for agent in agents:
-        agent_latences = [
-            r["latency"] for r in resultats if r["agent"] == agent["name"] and r["latency"]
-        ]
-        if agent_latences:
-            moyenne = sum(agent_latences) / len(agent_latences)
-            if moyenne > 0.8:
-                agents_surcharge.append(agent["name"])
-
-    # Matrice réseau (agents → sites → latence)
-    matrix = []
-    for agent in agents:
-        lignes = []
-        for r in resultats:
-            if r["agent"] == agent["name"]:
-                lignes.append({
-                    "site": r["site"],
-                    "value": r["latency"] or 0
-                })
-
-        matrix.append({
-            "agent": agent["name"],
-            "latences": lignes
-        })
-
-    # Logs
-    log_event("INFO", "Analyse réseau effectuée")
-
-    # Historique
-    ajouter_evenement("NETWORK", "cluster", "system", "Analyse réseau mise à jour")
-
-    return {
-        "latence_moyenne": latence_moyenne,
-        "agents_surcharge": agents_surcharge,
-        "sites_lents": sites_lents,
-        "agents": agents,
-        "matrix": matrix
+    Chaque entrée de `results` vient de monitor.py :
+    {
+        "site": ...,
+        "agent": ...,
+        "timestamp": ...,
+        "status": ...,
+        "latency": ...,
+        "dns": ...,
+        "size": ...,
+        "error": ...
     }
+
+    Retourne un rapport structuré :
+    {
+        "latence_moyenne": ...,
+        "dns_moyen": ...,
+        "sites_down": [...],
+        "erreurs": [...],
+        "par_agent": {
+            "agent-1": {...},
+            "agent-2": {...}
+        }
+    }
+    """
+
+    if not results:
+        return {
+            "latence_moyenne": None,
+            "dns_moyen": None,
+            "sites_down": [],
+            "erreurs": [],
+            "par_agent": {},
+            "agents": agents
+        }
+
+    # ============================
+    #   ANALYSE GLOBALE
+    # ============================
+
+    latences = [r["latency"] for r in results if r.get("latency") is not None]
+    dns_times = [r["dns"] for r in results if r.get("dns") is not None]
+
+    sites_down = [r["site"] for r in results if r.get("status") in ("ERROR", None) or (isinstance(r.get("status"), int) and r["status"] >= 500)]
+    erreurs = [r for r in results if r.get("status") == "ERROR"]
+
+    latence_moyenne = mean(latences) if latences else None
+    dns_moyen = mean(dns_times) if dns_times else None
+
+    # ============================
+    #   ANALYSE PAR AGENT
+    # ============================
+
+    analyse_agents = {}
+
+    for agent in agents:
+        nom = agent.get("name", "unknown-agent")
+
+        agent_results = [r for r in results if r.get("agent") == nom]
+
+        if not agent_results:
+            analyse_agents[nom] = {
+                "tests": 0,
+                "latence_moyenne": None,
+                "dns_moyen": None,
+                "sites_down": [],
+                "erreurs": []
+            }
+            continue
+
+        latences_agent = [r["latency"] for r in agent_results if r.get("latency") is not None]
+        dns_agent = [r["dns"] for r in agent_results if r.get("dns") is not None]
+
+        analyse_agents[nom] = {
+            "tests": len(agent_results),
+            "latence_moyenne": mean(latences_agent) if latences_agent else None,
+            "dns_moyen": mean(dns_agent) if dns_agent else None,
+            "sites_down": [r["site"] for r in agent_results if r.get("status") == "ERROR"],
+            "erreurs": [r for r in agent_results if r.get("status") == "ERROR"]
+        }
+
+    # ============================
+    #   RAPPORT FINAL
+    # ============================
+
+    rapport = {
+        "latence_moyenne": latence_moyenne,
+        "dns_moyen": dns_moyen,
+        "sites_down": sites_down,
+        "erreurs": erreurs,
+        "par_agent": analyse_agents,
+        "agents": agents
+    }
+
+    return rapport

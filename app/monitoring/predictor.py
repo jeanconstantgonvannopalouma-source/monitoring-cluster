@@ -1,75 +1,114 @@
-import statistics
-from logging.logger import log_event
-from logging.history import ajouter_evenement
+from typing import List, Dict, Any
+from statistics import mean
 
-def predire_panne(historique):
+
+# ============================
+#   CONFIG PREDICTION
+# ============================
+
+SEUIL_LATENCE_CRITIQUE = 2.0        # Latence > 2 sec = risque
+SEUIL_DNS_CRITIQUE = 1.0            # DNS > 1 sec = risque
+SEUIL_ERREURS_RECURRENTES = 3       # 3 erreurs consécutives = risque
+SEUIL_VARIATION_LATENCE = 1.5       # Variation > 1.5 sec = instabilité
+
+
+def _variation(values: List[float]) -> float:
     """
-    Prédiction professionnelle basée sur :
-    - erreurs HTTP
+    Retourne la variation max-min d'une liste.
+    """
+    if len(values) < 2:
+        return 0
+    return max(values) - min(values)
+
+
+def predire_panne(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Prédiction professionnelle de panne basée sur :
     - latence
-    - anomalies
-    - disponibilité
-    - stabilité réseau
+    - DNS
+    - erreurs
+    - instabilité
+    - variations
+    - tendances
+
+    Retourne :
+    {
+        "risque_global": ...,
+        "sites_a_risque": [...],
+        "details": {...}
+    }
     """
 
-    if not historique:
+    if not results:
         return {
-            "prediction": "Aucune donnée",
-            "risque": 0,
-            "details": "Pas assez d'événements pour analyser"
+            "risque_global": 0,
+            "sites_a_risque": [],
+            "details": {}
         }
 
-    # Erreurs HTTP
-    erreurs = sum(1 for e in historique if e.get("status") not in (200, "OK"))
-    total = len(historique)
-    taux_erreurs = erreurs / total
+    sites_risque = []
+    details = {}
 
-    # Latence
-    latences = [e.get("latency") for e in historique if e.get("latency")]
-    latence_moyenne = statistics.mean(latences) if latences else None
-    latence_variance = statistics.pvariance(latences) if len(latences) > 1 else 0
+    # Regroupement par site
+    par_site = {}
+    for r in results:
+        site = r["site"]
+        par_site.setdefault(site, []).append(r)
 
-    # Anomalies
-    anomalies = sum(1 for e in historique if e.get("type") == "ANOMALY")
-    taux_anomalies = anomalies / total
+    # Analyse par site
+    for site, entries in par_site.items():
 
-    # Disponibilité
-    dispo_events = [e for e in historique if e.get("status") == 200]
-    disponibilite = len(dispo_events) / total
+        latences = [e["latency"] for e in entries if e.get("latency") is not None]
+        dns_times = [e["dns"] for e in entries if e.get("dns") is not None]
+        erreurs = [e for e in entries if e.get("status") == "ERROR"]
 
-    # Score global
-    score = 0
+        risque = 0
+        motifs = []
 
-    score += taux_erreurs * 0.4
-    score += taux_anomalies * 0.3
-    score += (latence_moyenne or 0) * 0.2
-    score += latence_variance * 0.1
-    score += (1 - disponibilite) * 0.3
+        # 1. Latence critique
+        if latences and max(latences) > SEUIL_LATENCE_CRITIQUE:
+            risque += 30
+            motifs.append(f"Latence critique ({max(latences)} sec)")
 
-    # Interprétation
-    if score < 0.2:
-        prediction = "Risque faible"
-    elif score < 0.5:
-        prediction = "Risque moyen"
-    elif score < 0.8:
-        prediction = "Risque élevé"
-    else:
-        prediction = "Panne imminente"
+        # 2. DNS critique
+        if dns_times and max(dns_times) > SEUIL_DNS_CRITIQUE:
+            risque += 20
+            motifs.append(f"DNS lent ({max(dns_times)} sec)")
 
-    # Logs
-    log_event("INFO", f"Prédiction générée : {prediction} (score={round(score,2)})", "predictor")
+        # 3. Erreurs récurrentes
+        if len(erreurs) >= SEUIL_ERREURS_RECURRENTES:
+            risque += 40
+            motifs.append(f"{len(erreurs)} erreurs consécutives")
 
-    # Historique
-    ajouter_evenement("PREDICTION", "cluster", "system", f"{prediction} (score={round(score,2)})")
+        # 4. Instabilité (variation latence)
+        if latences and _variation(latences) > SEUIL_VARIATION_LATENCE:
+            risque += 25
+            motifs.append(f"Variation latence élevée ({_variation(latences)} sec)")
+
+        # 5. Site DOWN
+        if any(e.get("status") == "ERROR" for e in entries):
+            risque += 15
+            motifs.append("Site DOWN détecté")
+
+        # Score final
+        risque = min(risque, 100)
+
+        details[site] = {
+            "risque": risque,
+            "motifs": motifs,
+            "latence_moyenne": mean(latences) if latences else None,
+            "dns_moyen": mean(dns_times) if dns_times else None,
+            "erreurs": len(erreurs)
+        }
+
+        if risque >= 50:
+            sites_risque.append(site)
+
+    # Risque global = moyenne des risques
+    risque_global = mean([d["risque"] for d in details.values()]) if details else 0
 
     return {
-        "prediction": prediction,
-        "risque": round(score, 2),
-        "details": {
-            "taux_erreurs": round(taux_erreurs, 2),
-            "latence_moyenne": round(latence_moyenne, 3) if latence_moyenne else None,
-            "latence_variance": round(latence_variance, 3),
-            "taux_anomalies": round(taux_anomalies, 2),
-            "disponibilite": round(disponibilite, 2)
-        }
+        "risque_global": round(risque_global, 2),
+        "sites_a_risque": sites_risque,
+        "details": details
     }
